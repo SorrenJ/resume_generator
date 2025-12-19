@@ -1,0 +1,2675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder - Complete Solution</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+        
+        header {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+        
+        /* Sidebar styling */
+        .sidebar {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            height: fit-content;
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .module-control {
+            margin-bottom: 25px;
+        }
+        
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ecf0f1;
+            padding: 12px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .module-header:hover {
+            background-color: #d5dbdb;
+        }
+        
+        .module-header.active {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: #2c3e50;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .module-header.active .toggle-btn {
+            color: white;
+        }
+        
+        .content-options {
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 0 0 6px 6px;
+            margin-top: -5px;
+            border: 1px solid #eee;
+            display: none;
+        }
+        
+        .content-options.active {
+            display: block;
+        }
+        
+        .option-item {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .option-item input {
+            margin-right: 10px;
+        }
+        
+        .option-item label {
+            cursor: pointer;
+            font-size: 0.95rem;
+            width: 100%;
+            word-break: break-word;
+        }
+        
+        .file-controls {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-secondary {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-tertiary {
+            background-color: #9b59b6;
+            color: white;
+        }
+        
+        .btn-tertiary:hover {
+            background-color: #8e44ad;
+        }
+        
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #d68910;
+        }
+        
+        /* Resume Preview */
+        .resume-preview {
+            background-color: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            min-height: 800px;
+        }
+        
+        .resume-header {
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .resume-name {
+            font-size: 2.2rem;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .resume-title {
+            font-size: 1.3rem;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        
+        .contact-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            color: #7f8c8d;
+            font-size: 0.95rem;
+        }
+        
+        .resume-section {
+            margin-bottom: 30px;
+        }
+        
+        .resume-section h2 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .profile-text {
+            line-height: 1.8;
+            color: #555;
+            margin-bottom: 15px;
+        }
+        
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .skill-item {
+            background-color: #ecf0f1;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .work-item, .project-item, .education-item, .certificate-item {
+            margin-bottom: 25px;
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .item-title {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+        
+        .item-subtitle {
+            color: #3498db;
+            font-size: 1rem;
+        }
+        
+        .item-date {
+            color: #7f8c8d;
+            font-style: italic;
+            white-space: nowrap;
+        }
+        
+        .item-description {
+            color: #555;
+            margin-top: 8px;
+        }
+        
+        .item-bullets {
+            padding-left: 20px;
+            margin-top: 8px;
+        }
+        
+        .item-bullets li {
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        /* Advanced Markdown Editor Modal */
+        .editor-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .editor-modal.active {
+            display: flex;
+        }
+        
+        .editor-container {
+            background-color: white;
+            border-radius: 12px;
+            width: 95%;
+            max-width: 1400px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background-color: #2c3e50;
+            color: white;
+        }
+        
+        .editor-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+        }
+        
+        .editor-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.8rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+        
+        .editor-close:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .editor-toolbar {
+            display: flex;
+            padding: 15px 30px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .toolbar-btn {
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        
+        .toolbar-btn:hover {
+            background-color: #f1f1f1;
+            border-color: #3498db;
+        }
+        
+        .editor-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        @media (max-width: 1024px) {
+            .editor-content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .editor-pane {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-right: 1px solid #e9ecef;
+        }
+        
+        .editor-pane:last-child {
+            border-right: none;
+        }
+        
+        .pane-header {
+            padding: 15px 30px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 600;
+            color: #495057;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .pane-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .pane-btn {
+            padding: 5px 12px;
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        
+        .pane-btn:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .markdown-input {
+            flex: 1;
+            padding: 20px 30px;
+            border: none;
+            resize: none;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            outline: none;
+            overflow-y: auto;
+        }
+        
+        .markdown-preview {
+            flex: 1;
+            padding: 20px 30px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+        }
+        
+        .editor-footer {
+            padding: 20px 30px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .word-count {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .editor-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .editor-action-btn {
+            padding: 10px 25px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .editor-action-btn-primary {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .editor-action-btn-primary:hover {
+            background-color: #27ae60;
+        }
+        
+        .editor-action-btn-secondary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .editor-action-btn-secondary:hover {
+            background-color: #2980b9;
+        }
+        
+        .editor-action-btn-outline {
+            background-color: white;
+            color: #495057;
+            border: 1px solid #ddd;
+        }
+        
+        .editor-action-btn-outline:hover {
+            background-color: #f8f9fa;
+            border-color: #3498db;
+        }
+        
+        /* Markdown Preview Styling */
+        .markdown-preview h1 {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+        
+        .markdown-preview h2 {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 0.5rem;
+        }
+        
+        .markdown-preview h3 {
+            font-size: 1.2rem;
+            color: #3498db;
+            margin-top: 1.2rem;
+            margin-bottom: 0.8rem;
+        }
+        
+        .markdown-preview p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .markdown-preview ul, .markdown-preview ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+        
+        .markdown-preview li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .markdown-preview strong {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .markdown-preview em {
+            font-style: italic;
+            color: #6c757d;
+        }
+        
+        .markdown-preview hr {
+            border: none;
+            border-top: 1px solid #e9ecef;
+            margin: 1.5rem 0;
+        }
+        
+        /* PDF Export Modal */
+        .pdf-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1002;
+            padding: 20px;
+        }
+        
+        .pdf-modal.active {
+            display: flex;
+        }
+        
+        .pdf-container {
+            background-color: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+        }
+        
+        .pdf-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .pdf-title {
+            font-size: 1.6rem;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .pdf-close {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #7f8c8d;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+        
+        .pdf-close:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .pdf-options {
+            margin-bottom: 30px;
+        }
+        
+        .option-group {
+            margin-bottom: 20px;
+        }
+        
+        .option-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .option-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .option-row input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        
+        .option-row select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            min-width: 150px;
+        }
+        
+        .option-row input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            width: 100%;
+            max-width: 300px;
+        }
+        
+        .pdf-preview {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            margin-bottom: 25px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .pdf-preview h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .pdf-preview ul {
+            padding-left: 20px;
+            color: #555;
+        }
+        
+        .pdf-preview li {
+            margin-bottom: 5px;
+        }
+        
+        .pdf-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .pdf-btn {
+            padding: 12px 25px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 140px;
+            justify-content: center;
+        }
+        
+        .pdf-btn-primary {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .pdf-btn-primary:hover {
+            background-color: #c0392b;
+        }
+        
+        .pdf-btn-secondary {
+            background-color: #7f8c8d;
+            color: white;
+        }
+        
+        .pdf-btn-secondary:hover {
+            background-color: #636e72;
+        }
+        
+        .pdf-btn-tertiary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .pdf-btn-tertiary:hover {
+            background-color: #2980b9;
+        }
+        
+        .pdf-status {
+            text-align: center;
+            padding: 20px;
+            color: #3498db;
+            display: none;
+        }
+        
+        .pdf-status.active {
+            display: block;
+        }
+        
+        .pdf-status i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .progress-container.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 0%;
+            height: 10px;
+            background-color: #2ecc71;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        
+        /* Export Success Modal */
+        .export-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+        }
+        
+        .export-modal.active {
+            display: flex;
+        }
+        
+        .export-container {
+            background-color: white;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .export-icon {
+            font-size: 3rem;
+            color: #2ecc71;
+            margin-bottom: 20px;
+        }
+        
+        .export-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .export-message {
+            color: #6c757d;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        
+        .export-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .export-btn {
+            padding: 10px 25px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .export-btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .export-btn-primary:hover {
+            background-color: #2980b9;
+        }
+        
+        .export-btn-secondary {
+            background-color: #f8f9fa;
+            color: #495057;
+            border: 1px solid #ddd;
+        }
+        
+        .export-btn-secondary:hover {
+            background-color: #e9ecef;
+        }
+        
+        /* Loading indicator */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #3498db;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .footer-note {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: 30px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            
+            .resume-preview {
+                padding: 25px;
+            }
+            
+            .editor-content {
+                grid-template-columns: 1fr;
+                max-height: 70vh;
+            }
+            
+            .editor-pane {
+                max-height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Resume Builder</h1>
+            <p class="subtitle">Advanced Markdown Editor with PDF & Markdown Export</p>
+        </header>
+        
+        <div class="sidebar">
+            <h2 class="section-title">Content Controls</h2>
+            
+            <div class="module-control">
+                <div class="module-header" data-module="profile">
+                    <span>Profile Section</span>
+                    <button class="toggle-btn">Show Options</button>
+                </div>
+                <div class="content-options" id="profile-options">
+                    <!-- Profile options will be populated by JS -->
+                </div>
+            </div>
+            
+            <div class="module-control">
+                <div class="module-header" data-module="skills">
+                    <span>Skills Section</span>
+                    <button class="toggle-btn">Show Options</button>
+                </div>
+                <div class="content-options" id="skills-options">
+                    <!-- Skills options will be populated by JS -->
+                </div>
+            </div>
+            
+            <div class="module-control">
+                <div class="module-header" data-module="work">
+                    <span>Work Experience</span>
+                    <button class="toggle-btn">Show Options</button>
+                </div>
+                <div class="content-options" id="work-options">
+                    <!-- Work options will be populated by JS -->
+                </div>
+            </div>
+            
+            <div class="module-control">
+                <div class="module-header" data-module="projects">
+                    <span>Projects</span>
+                    <button class="toggle-btn">Show Options</button>
+                </div>
+                <div class="content-options" id="projects-options">
+                    <!-- Project options will be populated by JS -->
+                </div>
+            </div>
+            
+            <div class="module-control">
+                <div class="module-header" data-module="education">
+                    <span>Education</span>
+                    <button class="toggle-btn">Show Options</button>
+                </div>
+                <div class="content-options" id="education-options">
+                    <!-- Education options will be populated by JS -->
+                </div>
+            </div>
+            
+            <div class="module-control">
+                <div class="module-header" data-module="certificates">
+                    <span>Certificates</span>
+                    <button class="toggle-btn">Show Options</button>
+                </div>
+                <div class="content-options" id="certificates-options">
+                    <!-- Certificate options will be populated by JS -->
+                </div>
+            </div>
+            
+            <div class="file-controls">
+                <h2 class="section-title">File Operations</h2>
+                <button class="btn btn-primary" id="loadMdBtn">
+                    <i class="fas fa-file-import"></i> Load Markdown File
+                </button>
+                <button class="btn btn-secondary" id="editMdBtn">
+                    <i class="fas fa-edit"></i> Edit with Markdown Editor
+                </button>
+                <button class="btn btn-tertiary" id="exportPdfBtn">
+                    <i class="fas fa-file-pdf"></i> Export as PDF
+                </button>
+                <button class="btn btn-warning" id="exportMdBtn">
+                    <i class="fas fa-file-export"></i> Export as Markdown
+                </button>
+                <button class="btn btn-danger" id="resetBtn">
+                    <i class="fas fa-redo"></i> Reset to Default
+                </button>
+                <input type="file" id="fileInput" accept=".md,.markdown,.txt" style="display: none;">
+            </div>
+        </div>
+        
+        <div class="resume-preview" id="resumePreview">
+            <!-- Resume content will be populated by JS -->
+            <div class="resume-header">
+                <h1 class="resume-name">Alex Johnson</h1>
+                <div class="resume-title">Full Stack Developer</div>
+                <div class="contact-info">
+                    <span><i class="fas fa-envelope"></i> alex.johnson@example.com</span>
+                    <span><i class="fas fa-phone"></i> (123) 456-7890</span>
+                    <span><i class="fas fa-map-marker-alt"></i> San Francisco, CA</span>
+                    <span><i class="fab fa-github"></i> github.com/alexjohnson</span>
+                    <span><i class="fab fa-linkedin"></i> linkedin.com/in/alexjohnson</span>
+                </div>
+            </div>
+            
+            <!-- Content will be dynamically generated -->
+            <div class="loading" id="resumeLoading">Loading resume content...</div>
+        </div>
+        
+        <!-- Advanced Markdown Editor Modal -->
+        <div class="editor-modal" id="editorModal">
+            <div class="editor-container">
+                <div class="editor-header">
+                    <h2 class="editor-title">Advanced Markdown Editor</h2>
+                    <button class="editor-close" id="editorCloseBtn">&times;</button>
+                </div>
+                
+                <div class="editor-toolbar">
+                    <button class="toolbar-btn" data-action="h1">
+                        <i class="fas fa-heading"></i> H1
+                    </button>
+                    <button class="toolbar-btn" data-action="h2">
+                        <i class="fas fa-heading"></i> H2
+                    </button>
+                    <button class="toolbar-btn" data-action="h3">
+                        <i class="fas fa-heading"></i> H3
+                    </button>
+                    <div style="width: 1px; background-color: #ddd; margin: 0 5px;"></div>
+                    <button class="toolbar-btn" data-action="bold">
+                        <i class="fas fa-bold"></i> Bold
+                    </button>
+                    <button class="toolbar-btn" data-action="italic">
+                        <i class="fas fa-italic"></i> Italic
+                    </button>
+                    <div style="width: 1px; background-color: #ddd; margin: 0 5px;"></div>
+                    <button class="toolbar-btn" data-action="bullet">
+                        <i class="fas fa-list-ul"></i> Bullet List
+                    </button>
+                    <button class="toolbar-btn" data-action="number">
+                        <i class="fas fa-list-ol"></i> Numbered List
+                    </button>
+                    <div style="width: 1px; background-color: #ddd; margin: 0 5px;"></div>
+                    <button class="toolbar-btn" data-action="link">
+                        <i class="fas fa-link"></i> Link
+                    </button>
+                    <button class="toolbar-btn" data-action="code">
+                        <i class="fas fa-code"></i> Code
+                    </button>
+                    <button class="toolbar-btn" data-action="quote">
+                        <i class="fas fa-quote-right"></i> Quote
+                    </button>
+                </div>
+                
+                <div class="editor-content">
+                    <div class="editor-pane">
+                        <div class="pane-header">
+                            <span>Markdown Source</span>
+                            <div class="pane-actions">
+                                <button class="pane-btn" id="formatMdBtn">
+                                    <i class="fas fa-magic"></i> Format
+                                </button>
+                                <button class="pane-btn" id="clearMdBtn">
+                                    <i class="fas fa-trash-alt"></i> Clear
+                                </button>
+                            </div>
+                        </div>
+                        <textarea class="markdown-input" id="markdownInput" placeholder="# Your Resume in Markdown Format
+
+## Contact Info
+- **Email:** your.email@example.com
+- **Phone:** (123) 456-7890
+- **Location:** City, State
+- **LinkedIn:** linkedin.com/in/yourprofile
+- **GitHub:** github.com/yourusername
+
+## Profile
+Experienced software developer with expertise in full-stack web development...
+
+## Skills
+- JavaScript (ES6+)
+- React & Node.js
+- Python & Django
+- AWS & Docker
+- UI/UX Design
+
+## Work Experience
+### Senior Developer
+**Tech Company Inc.** | 2020 - Present
+- Led development of key features...
+- Improved application performance by 30%
+- Mentored junior developers
+
+## Education
+### Bachelor of Science in Computer Science
+**University Name** | 2016 - 2020
+Graduated with honors, GPA: 3.8/4.0
+
+## Projects
+### E-commerce Platform
+*2022*
+Built a full-featured e-commerce platform with React and Node.js...
+
+### Task Management App
+*2021*
+Developed a productivity app with real-time collaboration features..."></textarea>
+                    </div>
+                    
+                    <div class="editor-pane">
+                        <div class="pane-header">
+                            <span>Live Preview</span>
+                            <div class="pane-actions">
+                                <button class="pane-btn" id="refreshPreviewBtn">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <div class="markdown-preview" id="markdownPreview">
+                            <!-- Preview will be generated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="editor-footer">
+                    <div class="word-count" id="wordCount">Words: 0 | Characters: 0</div>
+                    <div class="editor-actions">
+                        <button class="editor-action-btn editor-action-btn-outline" id="cancelEditBtn">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button class="editor-action-btn editor-action-btn-secondary" id="exportMdEditorBtn">
+                            <i class="fas fa-download"></i> Export Markdown
+                        </button>
+                        <button class="editor-action-btn editor-action-btn-primary" id="saveMdBtn">
+                            <i class="fas fa-save"></i> Save & Update Resume
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- PDF Export Modal -->
+        <div class="pdf-modal" id="pdfModal">
+            <div class="pdf-container">
+                <div class="pdf-header">
+                    <h2 class="pdf-title">Export to PDF</h2>
+                    <button class="pdf-close" id="closePdfModalBtn">&times;</button>
+                </div>
+                
+                <div class="pdf-options">
+                    <div class="option-group">
+                        <label class="option-label">PDF Settings</label>
+                        <div class="option-row">
+                            <select id="pdfPageSize">
+                                <option value="a4">A4 (210 × 297 mm)</option>
+                                <option value="letter">Letter (8.5 × 11 in)</option>
+                                <option value="legal">Legal (8.5 × 14 in)</option>
+                            </select>
+                        </div>
+                        <div class="option-row">
+                            <select id="pdfOrientation">
+                                <option value="portrait">Portrait</option>
+                                <option value="landscape">Landscape</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="option-group">
+                        <label class="option-label">Content Options</label>
+                        <div class="option-row">
+                            <input type="checkbox" id="includeContactInfo" checked>
+                            <label for="includeContactInfo">Include contact information</label>
+                        </div>
+                        <div class="option-row">
+                            <input type="checkbox" id="includePageNumbers" checked>
+                            <label for="includePageNumbers">Include page numbers</label>
+                        </div>
+                        <div class="option-row">
+                            <input type="checkbox" id="includeTimestamp" checked>
+                            <label for="includeTimestamp">Include creation date</label>
+                        </div>
+                        <div class="option-row">
+                            <input type="checkbox" id="useCompactLayout">
+                            <label for="useCompactLayout">Use compact layout (save space)</label>
+                        </div>
+                    </div>
+                    
+                    <div class="option-group">
+                        <label class="option-label">File Name</label>
+                        <div class="option-row">
+                            <input type="text" id="pdfFileName" value="My_Resume" placeholder="Enter file name">
+                        </div>
+                    </div>
+                    
+                    <div class="pdf-preview">
+                        <h4>Export Preview</h4>
+                        <ul>
+                            <li>File: <span id="previewFileName">My_Resume.pdf</span></li>
+                            <li>Size: <span id="previewPageSize">A4 (210 × 297 mm)</span></li>
+                            <li>Orientation: <span id="previewOrientation">Portrait</span></li>
+                            <li>Sections to include: <span id="previewSections">All selected sections</span></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="pdf-status" id="pdfStatus">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Generating PDF... This may take a moment.</p>
+                </div>
+                
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                
+                <div class="pdf-actions">
+                    <button class="pdf-btn pdf-btn-secondary" id="cancelPdfBtn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button class="pdf-btn pdf-btn-tertiary" id="previewPdfBtn">
+                        <i class="fas fa-eye"></i> Preview
+                    </button>
+                    <button class="pdf-btn pdf-btn-primary" id="generatePdfBtn">
+                        <i class="fas fa-file-pdf"></i> Generate PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Export Success Modal -->
+        <div class="export-modal" id="exportModal">
+            <div class="export-container">
+                <div class="export-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h2 class="export-title" id="exportTitle">Export Successful!</h2>
+                <p class="export-message" id="exportMessage">
+                    Your file has been downloaded successfully.
+                </p>
+                <div class="export-actions">
+                    <button class="export-btn export-btn-primary" id="closeExportBtn">Continue Editing</button>
+                    <button class="export-btn export-btn-secondary" id="viewFileBtn">View File</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-note">
+            <p>Resume Builder v3.0 | Load, edit, and export resumes in Markdown or PDF format.</p>
+        </div>
+    </div>
+
+    <!-- Hidden div for PDF generation -->
+    <div id="pdfGenerationArea" style="position: absolute; left: -9999px; top: -9999px; width: 794px; background: white; padding: 40px;"></div>
+
+    <script>
+        // Default Markdown content
+        const defaultMarkdown = `# Alex Johnson
+### Full Stack Developer
+
+- **Email:** alex.johnson@example.com
+- **Phone:** (123) 456-7890
+- **Location:** San Francisco, CA
+- **GitHub:** github.com/alexjohnson
+- **LinkedIn:** linkedin.com/in/alexjohnson
+
+## Profile
+Experienced full stack developer with 5+ years of experience building scalable web applications. Passionate about AI/ML integration and UX design. Strong background in both frontend and backend technologies with a focus on React, Node.js, and cloud platforms.
+
+## Skills
+- JavaScript (ES6+)
+- React & Redux
+- Node.js & Express
+- Python & Django
+- AWS & Docker
+- MongoDB & PostgreSQL
+- Git & CI/CD
+- UI/UX Design
+- GraphQL
+
+## Work Experience
+### Senior Full Stack Developer
+**TechSolutions Inc.** | 2020 - Present
+- Led development of a SaaS platform serving 10,000+ monthly active users
+- Implemented microservices architecture reducing server costs by 30%
+- Mentored 4 junior developers and established coding standards
+
+### Frontend Developer
+**Digital Innovations LLC** | 2018 - 2020
+- Built responsive web applications using React and TypeScript
+- Collaborated with UX designers to implement pixel-perfect interfaces
+- Improved application performance by 40% through code optimization
+
+### Web Developer
+**StartUp Ventures** | 2016 - 2018
+- Developed and maintained company website and internal tools
+- Integrated third-party APIs for payment processing and analytics
+- Created reusable component library for faster development
+
+## Projects
+### E-commerce Analytics Dashboard
+*2022*
+Real-time analytics platform for e-commerce businesses with data visualization and predictive insights.
+
+### AI-Powered Resume Builder
+*2021*
+Web application that uses NLP to suggest improvements and tailor resumes for specific job postings.
+
+### Health & Fitness Mobile App
+*2020*
+React Native app with workout tracking, meal planning, and progress visualization features.
+
+## Education
+### Master of Science in Computer Science
+**Stanford University** | 2014 - 2016
+Specialized in Human-Computer Interaction and Machine Learning. GPA: 3.8/4.0
+
+### Bachelor of Science in Software Engineering
+**University of California, Berkeley** | 2010 - 2014
+Minor in Business Administration. Graduated with Honors.
+
+## Certificates
+### AWS Certified Solutions Architect
+**Amazon Web Services** | 2021
+Associate level certification covering AWS cloud services and architecture best practices.
+
+### Google UX Design Professional Certificate
+**Google** | 2020
+Comprehensive UX design principles, user research, and prototyping techniques.
+
+### React Advanced Patterns
+**Frontend Masters** | 2019
+Advanced React patterns, performance optimization, and state management strategies.`;
+
+        // Resume data structure
+        const resumeData = {
+            profile: [],
+            skills: [],
+            work: [],
+            projects: [],
+            education: [],
+            certificates: []
+        };
+
+        // DOM Elements
+        const resumePreview = document.getElementById('resumePreview');
+        const editorModal = document.getElementById('editorModal');
+        const markdownInput = document.getElementById('markdownInput');
+        const markdownPreview = document.getElementById('markdownPreview');
+        const fileInput = document.getElementById('fileInput');
+        const loadMdBtn = document.getElementById('loadMdBtn');
+        const editMdBtn = document.getElementById('editMdBtn');
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        const exportMdBtn = document.getElementById('exportMdBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const editorCloseBtn = document.getElementById('editorCloseBtn');
+        const exportMdEditorBtn = document.getElementById('exportMdEditorBtn');
+        const saveMdBtn = document.getElementById('saveMdBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const refreshPreviewBtn = document.getElementById('refreshPreviewBtn');
+        const formatMdBtn = document.getElementById('formatMdBtn');
+        const clearMdBtn = document.getElementById('clearMdBtn');
+        
+        // PDF Modal Elements
+        const pdfModal = document.getElementById('pdfModal');
+        const closePdfModalBtn = document.getElementById('closePdfModalBtn');
+        const cancelPdfBtn = document.getElementById('cancelPdfBtn');
+        const previewPdfBtn = document.getElementById('previewPdfBtn');
+        const generatePdfBtn = document.getElementById('generatePdfBtn');
+        const pdfStatus = document.getElementById('pdfStatus');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        
+        // PDF Options Elements
+        const pdfPageSize = document.getElementById('pdfPageSize');
+        const pdfOrientation = document.getElementById('pdfOrientation');
+        const includeContactInfo = document.getElementById('includeContactInfo');
+        const includePageNumbers = document.getElementById('includePageNumbers');
+        const includeTimestamp = document.getElementById('includeTimestamp');
+        const useCompactLayout = document.getElementById('useCompactLayout');
+        const pdfFileName = document.getElementById('pdfFileName');
+        
+        // Preview Elements
+        const previewFileName = document.getElementById('previewFileName');
+        const previewPageSize = document.getElementById('previewPageSize');
+        const previewOrientation = document.getElementById('previewOrientation');
+        const previewSections = document.getElementById('previewSections');
+        
+        // Export Modal Elements
+        const exportModal = document.getElementById('exportModal');
+        const exportTitle = document.getElementById('exportTitle');
+        const exportMessage = document.getElementById('exportMessage');
+        const closeExportBtn = document.getElementById('closeExportBtn');
+        const viewFileBtn = document.getElementById('viewFileBtn');
+        
+        // Other elements
+        const wordCount = document.getElementById('wordCount');
+        const resumeLoading = document.getElementById('resumeLoading');
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Parse default markdown
+            parseMarkdownToData(defaultMarkdown);
+            renderResume();
+            setupModuleControls();
+            setupEventListeners();
+            setupEditorToolbar();
+            updatePdfPreview();
+        });
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Module header toggle
+            document.querySelectorAll('.module-header').forEach(header => {
+                header.addEventListener('click', function() {
+                    const options = document.getElementById(`${this.dataset.module}-options`);
+                    const isActive = this.classList.contains('active');
+                    
+                    // Close all other options
+                    document.querySelectorAll('.module-header').forEach(h => h.classList.remove('active'));
+                    document.querySelectorAll('.content-options').forEach(o => o.classList.remove('active'));
+                    
+                    // Toggle current if it wasn't active
+                    if (!isActive) {
+                        this.classList.add('active');
+                        options.classList.add('active');
+                    }
+                });
+            });
+
+            // Load Markdown file
+            loadMdBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileLoad);
+
+            // Edit Markdown content
+            editMdBtn.addEventListener('click', openEditor);
+            
+            // Export to PDF
+            exportPdfBtn.addEventListener('click', openPdfModal);
+            
+            // Export to Markdown
+            exportMdBtn.addEventListener('click', exportToMarkdown);
+            
+            // Reset to default
+            resetBtn.addEventListener('click', resetToDefault);
+            
+            // Editor controls
+            editorCloseBtn.addEventListener('click', closeEditor);
+            cancelEditBtn.addEventListener('click', closeEditor);
+            refreshPreviewBtn.addEventListener('click', updateMarkdownPreview);
+            formatMdBtn.addEventListener('click', formatMarkdown);
+            clearMdBtn.addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear all content?')) {
+                    markdownInput.value = '';
+                    updateMarkdownPreview();
+                    updateWordCount();
+                }
+            });
+            
+            // Save markdown content
+            saveMdBtn.addEventListener('click', saveMarkdownContent);
+            
+            // Export from editor
+            exportMdEditorBtn.addEventListener('click', () => {
+                exportMarkdownFile(markdownInput.value, 'resume_edited.md');
+            });
+            
+            // PDF Modal controls
+            closePdfModalBtn.addEventListener('click', closePdfModal);
+            cancelPdfBtn.addEventListener('click', closePdfModal);
+            previewPdfBtn.addEventListener('click', previewPdf);
+            generatePdfBtn.addEventListener('click', generatePdf);
+            
+            // Export modal controls
+            closeExportBtn.addEventListener('click', () => exportModal.classList.remove('active'));
+            viewFileBtn.addEventListener('click', () => {
+                exportModal.classList.remove('active');
+                alert('Check your downloads folder for the exported file.');
+            });
+            
+            // Update PDF preview when options change
+            pdfPageSize.addEventListener('change', updatePdfPreview);
+            pdfOrientation.addEventListener('change', updatePdfPreview);
+            pdfFileName.addEventListener('input', updatePdfPreview);
+            
+            // Real-time preview and word count
+            markdownInput.addEventListener('input', function() {
+                updateWordCount();
+                debounce(updateMarkdownPreview, 300)();
+            });
+        }
+
+        // Set up editor toolbar functionality
+        function setupEditorToolbar() {
+            const toolbarBtns = document.querySelectorAll('.toolbar-btn');
+            toolbarBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const action = this.dataset.action;
+                    insertMarkdownSyntax(action);
+                });
+            });
+        }
+
+        // Insert markdown syntax based on toolbar action
+        function insertMarkdownSyntax(action) {
+            const textarea = markdownInput;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            let insertText = '';
+            
+            switch(action) {
+                case 'h1':
+                    insertText = selectedText ? `# ${selectedText}` : '# ';
+                    break;
+                case 'h2':
+                    insertText = selectedText ? `## ${selectedText}` : '## ';
+                    break;
+                case 'h3':
+                    insertText = selectedText ? `### ${selectedText}` : '### ';
+                    break;
+                case 'bold':
+                    insertText = selectedText ? `**${selectedText}**` : '****';
+                    break;
+                case 'italic':
+                    insertText = selectedText ? `*${selectedText}*` : '**';
+                    break;
+                case 'bullet':
+                    insertText = selectedText ? `- ${selectedText}` : '- ';
+                    break;
+                case 'number':
+                    insertText = selectedText ? `1. ${selectedText}` : '1. ';
+                    break;
+                case 'link':
+                    insertText = selectedText ? `[${selectedText}](url)` : '[link text](url)';
+                    break;
+                case 'code':
+                    insertText = selectedText ? `\`${selectedText}\`` : '``';
+                    break;
+                case 'quote':
+                    insertText = selectedText ? `> ${selectedText}` : '> ';
+                    break;
+            }
+            
+            // Insert the text
+            textarea.value = textarea.value.substring(0, start) + insertText + textarea.value.substring(end);
+            
+            // Set cursor position
+            const newCursorPos = start + insertText.length;
+            if (action === 'bold' && !selectedText) {
+                textarea.setSelectionRange(newCursorPos - 2, newCursorPos - 2);
+            } else if (action === 'italic' && !selectedText) {
+                textarea.setSelectionRange(newCursorPos - 1, newCursorPos - 1);
+            } else if (action === 'link' && !selectedText) {
+                textarea.setSelectionRange(newCursorPos - 6, newCursorPos - 4);
+            } else if (action === 'code' && !selectedText) {
+                textarea.setSelectionRange(newCursorPos - 1, newCursorPos - 1);
+            } else {
+                textarea.setSelectionRange(newCursorPos, newCursorPos);
+            }
+            
+            textarea.focus();
+            updateMarkdownPreview();
+            updateWordCount();
+        }
+
+        // Update word count
+        function updateWordCount() {
+            const text = markdownInput.value;
+            const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            const characters = text.length;
+            wordCount.textContent = `Words: ${words} | Characters: ${characters}`;
+        }
+
+        // Format markdown (basic formatting)
+        function formatMarkdown() {
+            let content = markdownInput.value;
+            
+            // Ensure proper spacing after headers
+            content = content.replace(/(#+ .+)\n*(?=\w)/g, '$1\n\n');
+            
+            // Ensure proper spacing between sections
+            content = content.replace(/(\n## .+)/g, '\n\n$1');
+            
+            // Ensure list items have proper spacing
+            content = content.replace(/(\n[-*] .+)/g, '\n$1');
+            
+            markdownInput.value = content;
+            updateMarkdownPreview();
+            updateWordCount();
+        }
+
+        // Debounce function for performance
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Parse Markdown content into resume data structure
+        function parseMarkdownToData(markdown) {
+            // Reset data structure
+            for (const module in resumeData) {
+                resumeData[module] = [];
+            }
+            
+            const lines = markdown.split('\n');
+            let currentSection = null;
+            let currentItem = null;
+            let itemId = 1;
+            
+            lines.forEach((line, index) => {
+                line = line.trim();
+                
+                // Check for section headers
+                if (line.startsWith('## ')) {
+                    const sectionName = line.substring(3).toLowerCase().trim();
+                    
+                    // Map section names to our data structure
+                    if (sectionName.includes('profile')) {
+                        currentSection = 'profile';
+                    } else if (sectionName.includes('skill')) {
+                        currentSection = 'skills';
+                    } else if (sectionName.includes('work') || sectionName.includes('experience')) {
+                        currentSection = 'work';
+                    } else if (sectionName.includes('project')) {
+                        currentSection = 'projects';
+                    } else if (sectionName.includes('education')) {
+                        currentSection = 'education';
+                    } else if (sectionName.includes('certificate') || sectionName.includes('certification')) {
+                        currentSection = 'certificates';
+                    } else {
+                        currentSection = null;
+                    }
+                    
+                    // Reset item ID for new section
+                    itemId = 1;
+                    currentItem = null;
+                }
+                // Check for sub-headers (h3) - usually item titles
+                else if (line.startsWith('### ') && currentSection) {
+                    // Save previous item if exists
+                    if (currentItem && currentSection) {
+                        resumeData[currentSection].push({...currentItem, id: itemId, selected: true});
+                        itemId++;
+                    }
+                    
+                    const title = line.substring(4).trim();
+                    currentItem = {title: title};
+                    
+                    // Initialize based on section type
+                    if (currentSection === 'profile') {
+                        currentItem.content = '';
+                    } else if (currentSection === 'skills') {
+                        currentItem.content = title;
+                    } else if (currentSection === 'work') {
+                        currentItem.company = '';
+                        currentItem.date = '';
+                        currentItem.bullets = [];
+                    } else if (currentSection === 'projects') {
+                        currentItem.date = '';
+                        currentItem.description = '';
+                    } else if (currentSection === 'education') {
+                        currentItem.study = title;
+                        currentItem.organization = '';
+                        currentItem.date = '';
+                        currentItem.description = '';
+                    } else if (currentSection === 'certificates') {
+                        currentItem.name = title;
+                        currentItem.organization = '';
+                        currentItem.date = '';
+                        currentItem.description = '';
+                    }
+                }
+                // Check for bold text (company/organization names)
+                else if (line.includes('**') && currentItem && (currentSection === 'work' || currentSection === 'education' || currentSection === 'certificates')) {
+                    const match = line.match(/\*\*(.+?)\*\*/);
+                    if (match) {
+                        if (currentSection === 'work') {
+                            currentItem.company = match[1];
+                        } else if (currentSection === 'education' || currentSection === 'certificates') {
+                            currentItem.organization = match[1];
+                        }
+                        
+                        // Extract date if present
+                        const dateMatch = line.match(/\|\s*(.+)$/);
+                        if (dateMatch) {
+                            currentItem.date = dateMatch[1].trim();
+                        }
+                    }
+                }
+                // Check for italic date (projects)
+                else if (line.startsWith('*') && line.endsWith('*') && currentItem && currentSection === 'projects') {
+                    currentItem.date = line.substring(1, line.length - 1).trim();
+                }
+                // Check for bullet points
+                else if (line.startsWith('- ') && currentSection) {
+                    const content = line.substring(2).trim();
+                    
+                    if (currentSection === 'skills') {
+                        resumeData[currentSection].push({
+                            id: itemId,
+                            content: content,
+                            selected: true
+                        });
+                        itemId++;
+                    } else if (currentSection === 'work' && currentItem) {
+                        currentItem.bullets = currentItem.bullets || [];
+                        currentItem.bullets.push(content);
+                    }
+                }
+                // Regular text content
+                else if (line && currentSection && currentItem) {
+                    if (currentSection === 'profile') {
+                        currentItem.content = (currentItem.content + ' ' + line).trim();
+                    } else if (currentSection === 'projects' || currentSection === 'education' || currentSection === 'certificates') {
+                        currentItem.description = (currentItem.description + ' ' + line).trim();
+                    }
+                }
+                // Empty line - save current item
+                else if (!line && currentItem && currentSection && Object.keys(currentItem).length > 0) {
+                    if (currentSection === 'profile' && currentItem.content) {
+                        resumeData[currentSection].push({...currentItem, id: itemId, selected: true});
+                        itemId++;
+                        currentItem = null;
+                    } else if (currentSection !== 'profile' && currentSection !== 'skills' && currentItem.title) {
+                        resumeData[currentSection].push({...currentItem, id: itemId, selected: true});
+                        itemId++;
+                        currentItem = null;
+                    }
+                }
+            });
+            
+            // Save the last item
+            if (currentItem && currentSection && Object.keys(currentItem).length > 0) {
+                if (currentSection === 'profile' && currentItem.content) {
+                    resumeData[currentSection].push({...currentItem, id: itemId, selected: true});
+                } else if (currentSection !== 'profile' && currentSection !== 'skills' && currentItem.title) {
+                    resumeData[currentSection].push({...currentItem, id: itemId, selected: true});
+                }
+            }
+            
+            // Ensure all items have IDs and selected status
+            for (const module in resumeData) {
+                resumeData[module].forEach((item, index) => {
+                    item.id = index + 1;
+                    if (item.selected === undefined) {
+                        item.selected = true;
+                    }
+                });
+            }
+        }
+
+        // Set up module controls (checkboxes for each option)
+        function setupModuleControls() {
+            // For each module type, create checkboxes
+            for (const module in resumeData) {
+                const optionsContainer = document.getElementById(`${module}-options`);
+                optionsContainer.innerHTML = '';
+                
+                if (resumeData[module].length === 0) {
+                    optionsContainer.innerHTML = '<p style="color: #7f8c8d; font-style: italic;">No items found in this section.</p>';
+                    continue;
+                }
+                
+                resumeData[module].forEach(item => {
+                    const optionItem = document.createElement('div');
+                    optionItem.className = 'option-item';
+                    
+                    const checkboxId = `${module}-${item.id}`;
+                    
+                    optionItem.innerHTML = `
+                        <input type="checkbox" id="${checkboxId}" ${item.selected ? 'checked' : ''}>
+                        <label for="${checkboxId}">${getOptionLabel(module, item)}</label>
+                    `;
+                    
+                    const checkbox = optionItem.querySelector('input');
+                    checkbox.addEventListener('change', () => {
+                        item.selected = checkbox.checked;
+                        renderResume();
+                    });
+                    
+                    optionsContainer.appendChild(optionItem);
+                });
+            }
+        }
+
+        // Get appropriate label for each option based on module type
+        function getOptionLabel(module, item) {
+            switch(module) {
+                case 'profile':
+                    return `Profile ${item.id}: ${item.content.substring(0, 60)}...`;
+                case 'skills':
+                    return item.content;
+                case 'work':
+                    return `${item.title} at ${item.company || 'Unknown Company'}`;
+                case 'projects':
+                    return `${item.title} (${item.date || 'No date'})`;
+                case 'education':
+                    return `${item.study || item.title} - ${item.organization || 'Unknown'}`;
+                case 'certificates':
+                    return `${item.name || item.title} - ${item.organization || 'Unknown'}`;
+                default:
+                    return `Option ${item.id}`;
+            }
+        }
+
+        // Render the resume preview
+        function renderResume() {
+            // Show loading indicator
+            resumeLoading.classList.add('active');
+            
+            // Clear existing content except header and loading
+            const header = resumePreview.querySelector('.resume-header');
+            resumePreview.innerHTML = '';
+            resumePreview.appendChild(header);
+            resumePreview.appendChild(resumeLoading);
+            
+            // Use setTimeout to allow DOM to update before rendering
+            setTimeout(() => {
+                // Add profile section
+                const selectedProfiles = resumeData.profile.filter(p => p.selected);
+                if (selectedProfiles.length > 0) {
+                    const profileSection = createSection('profile', 'Profile');
+                    selectedProfiles.forEach(profile => {
+                        const profileText = document.createElement('p');
+                        profileText.className = 'profile-text';
+                        profileText.textContent = profile.content;
+                        profileSection.appendChild(profileText);
+                    });
+                    resumePreview.appendChild(profileSection);
+                }
+                
+                // Add skills section
+                const selectedSkills = resumeData.skills.filter(s => s.selected);
+                if (selectedSkills.length > 0) {
+                    const skillsSection = createSection('skills', 'Skills');
+                    const skillsList = document.createElement('div');
+                    skillsList.className = 'skills-list';
+                    
+                    selectedSkills.forEach(skill => {
+                        const skillItem = document.createElement('div');
+                        skillItem.className = 'skill-item';
+                        skillItem.textContent = skill.content;
+                        skillsList.appendChild(skillItem);
+                    });
+                    
+                    skillsSection.appendChild(skillsList);
+                    resumePreview.appendChild(skillsSection);
+                }
+                
+                // Add work experience section
+                const selectedWork = resumeData.work.filter(w => w.selected);
+                if (selectedWork.length > 0) {
+                    const workSection = createSection('work', 'Work Experience');
+                    
+                    selectedWork.forEach(job => {
+                        const workItem = document.createElement('div');
+                        workItem.className = 'work-item';
+                        
+                        workItem.innerHTML = `
+                            <div class="item-header">
+                                <div>
+                                    <div class="item-title">${job.title}</div>
+                                    <div class="item-subtitle">${job.company || ''}</div>
+                                </div>
+                                <div class="item-date">${job.date || ''}</div>
+                            </div>
+                            <ul class="item-bullets">
+                                ${(job.bullets || []).map(bullet => `<li>${bullet}</li>`).join('')}
+                            </ul>
+                        `;
+                        
+                        workSection.appendChild(workItem);
+                    });
+                    
+                    resumePreview.appendChild(workSection);
+                }
+                
+                // Add projects section
+                const selectedProjects = resumeData.projects.filter(p => p.selected);
+                if (selectedProjects.length > 0) {
+                    const projectsSection = createSection('projects', 'Projects');
+                    
+                    selectedProjects.forEach(project => {
+                        const projectItem = document.createElement('div');
+                        projectItem.className = 'project-item';
+                        
+                        projectItem.innerHTML = `
+                            <div class="item-header">
+                                <div class="item-title">${project.title}</div>
+                                <div class="item-date">${project.date || ''}</div>
+                            </div>
+                            <div class="item-description">${project.description || ''}</div>
+                        `;
+                        
+                        projectsSection.appendChild(projectItem);
+                    });
+                    
+                    resumePreview.appendChild(projectsSection);
+                }
+                
+                // Add education section
+                const selectedEducation = resumeData.education.filter(e => e.selected);
+                if (selectedEducation.length > 0) {
+                    const educationSection = createSection('education', 'Education');
+                    
+                    selectedEducation.forEach(edu => {
+                        const eduItem = document.createElement('div');
+                        eduItem.className = 'education-item';
+                        
+                        eduItem.innerHTML = `
+                            <div class="item-header">
+                                <div>
+                                    <div class="item-title">${edu.study || edu.title}</div>
+                                    <div class="item-subtitle">${edu.organization || ''}</div>
+                                </div>
+                                <div class="item-date">${edu.date || ''}</div>
+                            </div>
+                            <div class="item-description">${edu.description || ''}</div>
+                        `;
+                        
+                        educationSection.appendChild(eduItem);
+                    });
+                    
+                    resumePreview.appendChild(educationSection);
+                }
+                
+                // Add certificates section
+                const selectedCertificates = resumeData.certificates.filter(c => c.selected);
+                if (selectedCertificates.length > 0) {
+                    const certificatesSection = createSection('certificates', 'Certificates');
+                    
+                    selectedCertificates.forEach(cert => {
+                        const certItem = document.createElement('div');
+                        certItem.className = 'certificate-item';
+                        
+                        certItem.innerHTML = `
+                            <div class="item-header">
+                                <div>
+                                    <div class="item-title">${cert.name || cert.title}</div>
+                                    <div class="item-subtitle">${cert.organization || ''}</div>
+                                </div>
+                                <div class="item-date">${cert.date || ''}</div>
+                            </div>
+                            <div class="item-description">${cert.description || ''}</div>
+                        `;
+                        
+                        certificatesSection.appendChild(certItem);
+                    });
+                    
+                    resumePreview.appendChild(certificatesSection);
+                }
+                
+                // Hide loading indicator
+                resumeLoading.classList.remove('active');
+            }, 50);
+        }
+
+        // Create a resume section element
+        function createSection(id, title) {
+            const section = document.createElement('div');
+            section.className = 'resume-section';
+            section.id = `${id}-section`;
+            
+            const sectionTitle = document.createElement('h2');
+            sectionTitle.textContent = title;
+            
+            section.appendChild(sectionTitle);
+            return section;
+        }
+
+        // Handle file loading
+        function handleFileLoad(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                parseMarkdownToData(content);
+                renderResume();
+                setupModuleControls();
+                
+                alert('Markdown file loaded successfully!');
+            };
+            reader.readAsText(file);
+        }
+
+        // Convert resume data to Markdown format
+        function convertToMarkdown() {
+            let markdown = `# Alex Johnson\n`;
+            markdown += `### Full Stack Developer\n\n`;
+            
+            // Contact info
+            markdown += `- **Email:** alex.johnson@example.com\n`;
+            markdown += `- **Phone:** (123) 456-7890\n`;
+            markdown += `- **Location:** San Francisco, CA\n`;
+            markdown += `- **GitHub:** github.com/alexjohnson\n`;
+            markdown += `- **LinkedIn:** linkedin.com/in/alexjohnson\n\n`;
+            
+            // Profile section
+            const selectedProfiles = resumeData.profile.filter(p => p.selected);
+            if (selectedProfiles.length > 0) {
+                markdown += `## Profile\n\n`;
+                selectedProfiles.forEach(profile => {
+                    markdown += `${profile.content}\n\n`;
+                });
+            }
+            
+            // Skills section
+            const selectedSkills = resumeData.skills.filter(s => s.selected);
+            if (selectedSkills.length > 0) {
+                markdown += `## Skills\n\n`;
+                selectedSkills.forEach(skill => {
+                    markdown += `- ${skill.content}\n`;
+                });
+                markdown += `\n`;
+            }
+            
+            // Work experience
+            const selectedWork = resumeData.work.filter(w => w.selected);
+            if (selectedWork.length > 0) {
+                markdown += `## Work Experience\n\n`;
+                selectedWork.forEach(job => {
+                    markdown += `### ${job.title}\n`;
+                    markdown += `**${job.company || 'Company'}** | ${job.date || 'Date'}\n\n`;
+                    (job.bullets || []).forEach(bullet => {
+                        markdown += `- ${bullet}\n`;
+                    });
+                    markdown += `\n`;
+                });
+            }
+            
+            // Projects
+            const selectedProjects = resumeData.projects.filter(p => p.selected);
+            if (selectedProjects.length > 0) {
+                markdown += `## Projects\n\n`;
+                selectedProjects.forEach(project => {
+                    markdown += `### ${project.title}\n`;
+                    markdown += `*${project.date || 'Date'}*\n\n`;
+                    markdown += `${project.description || ''}\n\n`;
+                });
+            }
+            
+            // Education
+            const selectedEducation = resumeData.education.filter(e => e.selected);
+            if (selectedEducation.length > 0) {
+                markdown += `## Education\n\n`;
+                selectedEducation.forEach(edu => {
+                    markdown += `### ${edu.study || edu.title}\n`;
+                    markdown += `**${edu.organization || 'Institution'}** | ${edu.date || 'Date'}\n\n`;
+                    markdown += `${edu.description || ''}\n\n`;
+                });
+            }
+            
+            // Certificates
+            const selectedCertificates = resumeData.certificates.filter(c => c.selected);
+            if (selectedCertificates.length > 0) {
+                markdown += `## Certificates\n\n`;
+                selectedCertificates.forEach(cert => {
+                    markdown += `### ${cert.name || cert.title}\n`;
+                    markdown += `**${cert.organization || 'Issuer'}** | ${cert.date || 'Date'}\n\n`;
+                    markdown += `${cert.description || ''}\n\n`;
+                });
+            }
+            
+            return markdown;
+        }
+
+        // Open the advanced markdown editor
+        function openEditor() {
+            const markdownContent = convertToMarkdown();
+            markdownInput.value = markdownContent;
+            updateMarkdownPreview();
+            updateWordCount();
+            editorModal.classList.add('active');
+            markdownInput.focus();
+        }
+
+        // Close the markdown editor
+        function closeEditor() {
+            if (markdownInput.value !== convertToMarkdown()) {
+                if (confirm('You have unsaved changes. Are you sure you want to close the editor?')) {
+                    editorModal.classList.remove('active');
+                }
+            } else {
+                editorModal.classList.remove('active');
+            }
+        }
+
+        // Update the markdown preview pane
+        function updateMarkdownPreview() {
+            const markdownContent = markdownInput.value;
+            markdownPreview.innerHTML = parseMarkdownForPreview(markdownContent);
+        }
+
+        // Parse markdown for preview (simple implementation)
+        function parseMarkdownForPreview(markdown) {
+            let html = markdown
+                .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+                .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+                .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+                .replace(/`(.*?)`/gim, '<code>$1</code>')
+                .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank">$1</a>')
+                .replace(/^- (.*$)/gim, '<li>$1</li>')
+                .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+                .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+                .replace(/\n\n/gim, '</p><p>')
+                .replace(/\n/gim, '<br>');
+            
+            // Wrap consecutive list items
+            html = html.replace(/(<li>.*?<\/li>)(?!\s*<li>)/gim, '<ul>$1</ul>');
+            html = html.replace(/(<ul>.*?<\/ul>)\s*(<ul>.*?<\/ul>)/gim, '$1$2');
+            
+            // Wrap in paragraph tags
+            if (!html.startsWith('<h') && !html.startsWith('<ul') && !html.startsWith('<blockquote')) {
+                html = '<p>' + html + '</p>';
+            }
+            
+            return html;
+        }
+
+        // Save markdown content and update resume
+        function saveMarkdownContent() {
+            const content = markdownInput.value;
+            parseMarkdownToData(content);
+            renderResume();
+            setupModuleControls();
+            
+            // Show success message
+            showExportSuccess('Resume Updated', 'Your resume has been successfully updated with the Markdown content.');
+            
+            // Close editor after a short delay
+            setTimeout(() => {
+                editorModal.classList.remove('active');
+            }, 1500);
+        }
+
+        // Reset to default markdown
+        function resetToDefault() {
+            if (confirm('Are you sure you want to reset to the default resume? This will overwrite your current content.')) {
+                parseMarkdownToData(defaultMarkdown);
+                renderResume();
+                setupModuleControls();
+                
+                alert('Reset to default resume completed!');
+            }
+        }
+
+        // Export to Markdown file
+        function exportToMarkdown() {
+            const markdownContent = convertToMarkdown();
+            exportMarkdownFile(markdownContent, 'resume_exported.md');
+        }
+
+        // Export markdown file with download
+        function exportMarkdownFile(content, filename) {
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // Show export success modal
+            showExportSuccess('Markdown Exported', `Your resume has been exported as "${filename}".`);
+        }
+
+        // Show export success modal
+        function showExportSuccess(title, message) {
+            exportTitle.textContent = title;
+            exportMessage.textContent = message;
+            exportModal.classList.add('active');
+        }
+
+        // Open PDF modal
+        function openPdfModal() {
+            updatePdfPreview();
+            pdfModal.classList.add('active');
+        }
+        
+        // Close PDF modal
+        function closePdfModal() {
+            pdfModal.classList.remove('active');
+        }
+        
+        // Update PDF preview information
+        function updatePdfPreview() {
+            const fileName = pdfFileName.value.trim() || 'My_Resume';
+            previewFileName.textContent = `${fileName}.pdf`;
+            
+            const sizeText = {
+                'a4': 'A4 (210 × 297 mm)',
+                'letter': 'Letter (8.5 × 11 in)',
+                'legal': 'Legal (8.5 × 14 in)'
+            };
+            previewPageSize.textContent = sizeText[pdfPageSize.value] || 'A4';
+            
+            previewOrientation.textContent = pdfOrientation.value === 'portrait' ? 'Portrait' : 'Landscape';
+            
+            // Count selected sections
+            let sectionCount = 0;
+            const sections = ['profile', 'skills', 'work', 'projects', 'education', 'certificates'];
+            sections.forEach(section => {
+                const selectedItems = resumeData[section].filter(item => item.selected);
+                if (selectedItems.length > 0) sectionCount++;
+            });
+            previewSections.textContent = `${sectionCount} sections`;
+        }
+        
+        // Preview PDF (opens in print dialog)
+        function previewPdf() {
+            generatePdf(true);
+        }
+        
+        // Generate PDF function
+        async function generatePdf(isPreview = false) {
+            try {
+                // Show loading state
+                pdfStatus.classList.add('active');
+                progressContainer.classList.add('active');
+                progressBar.style.width = '10%';
+                
+                const { jsPDF } = window.jspdf;
+                
+                // Get PDF settings
+                const pageSize = pdfPageSize.value;
+                const orientation = pdfOrientation.value;
+                const fileName = (pdfFileName.value.trim() || 'My_Resume') + '.pdf';
+                const compactLayout = useCompactLayout.checked;
+                
+                // Create PDF instance
+                const pdf = new jsPDF({
+                    orientation: orientation,
+                    unit: 'mm',
+                    format: pageSize
+                });
+                
+                // Set initial progress
+                progressBar.style.width = '20%';
+                
+                // Create temporary div for PDF content
+                const pdfContent = createPdfContent(compactLayout);
+                const pdfGenerationArea = document.getElementById('pdfGenerationArea');
+                pdfGenerationArea.innerHTML = '';
+                pdfGenerationArea.appendChild(pdfContent);
+                
+                progressBar.style.width = '40%';
+                
+                // Convert HTML to canvas
+                const canvas = await html2canvas(pdfContent, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    onclone: function(clonedDoc) {
+                        // Ensure styles are applied in the cloned document
+                        const clonedPdfContent = clonedDoc.getElementById('pdfGenerationArea').firstChild;
+                        if (clonedPdfContent) {
+                            clonedPdfContent.style.width = '794px';
+                            clonedPdfContent.style.padding = compactLayout ? '30px' : '40px';
+                            clonedPdfContent.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+                            clonedPdfContent.style.backgroundColor = 'white';
+                        }
+                    }
+                });
+                
+                progressBar.style.width = '70%';
+                
+                // Get image dimensions
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = pdf.internal.pageSize.getWidth();
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                progressBar.style.width = '80%';
+                
+                // Add image to PDF
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                
+                // Add page numbers if enabled
+                if (includePageNumbers.checked) {
+                    const pageCount = pdf.internal.getNumberOfPages();
+                    for (let i = 1; i <= pageCount; i++) {
+                        pdf.setPage(i);
+                        pdf.setFontSize(10);
+                        pdf.setTextColor(100, 100, 100);
+                        pdf.text(
+                            `Page ${i} of ${pageCount}`,
+                            pdf.internal.pageSize.getWidth() - 20,
+                            pdf.internal.pageSize.getHeight() - 10
+                        );
+                    }
+                }
+                
+                // Add timestamp if enabled
+                if (includeTimestamp.checked) {
+                    pdf.setPage(1);
+                    pdf.setFontSize(9);
+                    pdf.setTextColor(150, 150, 150);
+                    pdf.text(
+                        `Generated on ${new Date().toLocaleDateString()}`,
+                        10,
+                        pdf.internal.pageSize.getHeight() - 10
+                    );
+                }
+                
+                progressBar.style.width = '100%';
+                
+                // Save or preview PDF
+                if (isPreview) {
+                    // Open in new window for preview
+                    const pdfBlob = pdf.output('blob');
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                    window.open(pdfUrl, '_blank');
+                    URL.revokeObjectURL(pdfUrl);
+                } else {
+                    // Download PDF
+                    pdf.save(fileName);
+                    
+                    // Show success message
+                    showExportSuccess('PDF Exported', `Your resume has been exported as "${fileName}".`);
+                }
+                
+                // Reset progress
+                setTimeout(() => {
+                    pdfStatus.classList.remove('active');
+                    progressContainer.classList.remove('active');
+                    progressBar.style.width = '0%';
+                    closePdfModal();
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                alert('Error generating PDF. Please try again.\n\nError details: ' + error.message);
+                
+                // Reset UI
+                pdfStatus.classList.remove('active');
+                progressContainer.classList.remove('active');
+                progressBar.style.width = '0%';
+            }
+        }
+        
+        // Create optimized PDF content
+        function createPdfContent(compact = false) {
+            const container = document.createElement('div');
+            container.style.cssText = `
+                background-color: white;
+                padding: ${compact ? '30px' : '40px'};
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                width: 794px;
+                box-sizing: border-box;
+            `;
+            
+            // Create header
+            const header = document.createElement('div');
+            header.style.cssText = `
+                border-bottom: 2px solid #3498db;
+                padding-bottom: ${compact ? '10px' : '15px'};
+                margin-bottom: ${compact ? '15px' : '25px'};
+            `;
+            
+            const name = document.createElement('h1');
+            name.textContent = 'Alex Johnson';
+            name.style.cssText = `
+                font-size: ${compact ? '24px' : '28px'};
+                color: #2c3e50;
+                margin-bottom: 5px;
+                font-weight: bold;
+            `;
+            
+            const title = document.createElement('div');
+            title.textContent = 'Full Stack Developer';
+            title.style.cssText = `
+                font-size: ${compact ? '16px' : '18px'};
+                color: #3498db;
+                margin-bottom: ${compact ? '10px' : '15px'};
+                font-weight: 600;
+            `;
+            
+            header.appendChild(name);
+            header.appendChild(title);
+            
+            // Add contact info if enabled
+            if (includeContactInfo.checked) {
+                const contactInfo = document.createElement('div');
+                contactInfo.style.cssText = `
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: ${compact ? '10px' : '15px'};
+                    font-size: ${compact ? '10px' : '12px'};
+                    color: #555;
+                `;
+                
+                const contacts = [
+                    { icon: 'envelope', text: 'alex.johnson@example.com' },
+                    { icon: 'phone', text: '(123) 456-7890' },
+                    { icon: 'map-marker-alt', text: 'San Francisco, CA' },
+                    { icon: 'github', text: 'github.com/alexjohnson' },
+                    { icon: 'linkedin', text: 'linkedin.com/in/alexjohnson' }
+                ];
+                
+                contacts.forEach(contact => {
+                    const span = document.createElement('span');
+                    span.innerHTML = `<i class="fas fa-${contact.icon}"></i> ${contact.text}`;
+                    contactInfo.appendChild(span);
+                });
+                
+                header.appendChild(contactInfo);
+            }
+            
+            container.appendChild(header);
+            
+            // Helper function to create sections
+            const createSection = (titleText, items, type) => {
+                if (!items || items.length === 0) return null;
+                
+                const section = document.createElement('div');
+                section.style.marginBottom = compact ? '15px' : '25px';
+                
+                const sectionTitle = document.createElement('h2');
+                sectionTitle.textContent = titleText;
+                sectionTitle.style.cssText = `
+                    font-size: ${compact ? '16px' : '18px'};
+                    color: #2c3e50;
+                    border-bottom: 1px solid #eee;
+                    padding-bottom: 5px;
+                    margin-bottom: ${compact ? '10px' : '15px'};
+                    font-weight: 600;
+                `;
+                
+                section.appendChild(sectionTitle);
+                
+                items.forEach(item => {
+                    if (type === 'profile') {
+                        const profileText = document.createElement('p');
+                        profileText.textContent = item.content;
+                        profileText.style.cssText = `
+                            font-size: ${compact ? '12px' : '14px'};
+                            line-height: 1.6;
+                            color: #333;
+                            margin-bottom: ${compact ? '8px' : '10px'};
+                        `;
+                        section.appendChild(profileText);
+                    }
+                    else if (type === 'skills') {
+                        const skillsContainer = document.createElement('div');
+                        skillsContainer.style.cssText = `
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: ${compact ? '6px' : '8px'};
+                        `;
+                        
+                        item.content.split(', ').forEach(skill => {
+                            const skillItem = document.createElement('div');
+                            skillItem.textContent = skill;
+                            skillItem.style.cssText = `
+                                background-color: #f5f5f5;
+                                padding: ${compact ? '4px 10px' : '6px 12px'};
+                                border-radius: 15px;
+                                font-size: ${compact ? '10px' : '12px'};
+                            `;
+                            skillsContainer.appendChild(skillItem);
+                        });
+                        
+                        section.appendChild(skillsContainer);
+                    }
+                    else if (type === 'work') {
+                        const workItem = document.createElement('div');
+                        workItem.style.marginBottom = compact ? '12px' : '20px';
+                        
+                        const itemHeader = document.createElement('div');
+                        itemHeader.style.cssText = `
+                            display: flex;
+                            justify-content: space-between;
+                            margin-bottom: 5px;
+                        `;
+                        
+                        const leftColumn = document.createElement('div');
+                        
+                        const itemTitle = document.createElement('div');
+                        itemTitle.textContent = item.title;
+                        itemTitle.style.cssText = `
+                            font-weight: 600;
+                            font-size: ${compact ? '13px' : '14px'};
+                            color: #2c3e50;
+                        `;
+                        
+                        const itemSubtitle = document.createElement('div');
+                        itemSubtitle.textContent = item.company || '';
+                        itemSubtitle.style.cssText = `
+                            font-size: ${compact ? '11px' : '12px'};
+                            color: #3498db;
+                        `;
+                        
+                        leftColumn.appendChild(itemTitle);
+                        leftColumn.appendChild(itemSubtitle);
+                        
+                        const itemDate = document.createElement('div');
+                        itemDate.textContent = item.date || '';
+                        itemDate.style.cssText = `
+                            font-size: ${compact ? '10px' : '12px'};
+                            color: #777;
+                            font-style: italic;
+                            white-space: nowrap;
+                        `;
+                        
+                        itemHeader.appendChild(leftColumn);
+                        itemHeader.appendChild(itemDate);
+                        
+                        workItem.appendChild(itemHeader);
+                        
+                        if (item.bullets && item.bullets.length > 0) {
+                            const bulletsList = document.createElement('ul');
+                            bulletsList.style.cssText = `
+                                padding-left: 20px;
+                                font-size: ${compact ? '11px' : '12px'};
+                                color: #333;
+                                margin-top: 5px;
+                            `;
+                            
+                            item.bullets.forEach(bullet => {
+                                const li = document.createElement('li');
+                                li.textContent = bullet;
+                                li.style.marginBottom = '4px';
+                                bulletsList.appendChild(li);
+                            });
+                            
+                            workItem.appendChild(bulletsList);
+                        }
+                        
+                        section.appendChild(workItem);
+                    }
+                    else if (type === 'projects' || type === 'education' || type === 'certificates') {
+                        const genericItem = document.createElement('div');
+                        genericItem.style.marginBottom = compact ? '12px' : '20px';
+                        
+                        const itemHeader = document.createElement('div');
+                        itemHeader.style.cssText = `
+                            display: flex;
+                            justify-content: space-between;
+                            margin-bottom: 5px;
+                        `;
+                        
+                        const leftColumn = document.createElement('div');
+                        
+                        const itemTitle = document.createElement('div');
+                        itemTitle.textContent = type === 'education' ? item.study || item.title : 
+                                              type === 'certificates' ? item.name || item.title : item.title;
+                        itemTitle.style.cssText = `
+                            font-weight: 600;
+                            font-size: ${compact ? '13px' : '14px'};
+                            color: #2c3e50;
+                        `;
+                        
+                        if (type === 'education' || type === 'certificates') {
+                            const itemSubtitle = document.createElement('div');
+                            itemSubtitle.textContent = item.organization || '';
+                            itemSubtitle.style.cssText = `
+                                font-size: ${compact ? '11px' : '12px'};
+                                color: #3498db;
+                            `;
+                            leftColumn.appendChild(itemSubtitle);
+                        }
+                        
+                        leftColumn.appendChild(itemTitle);
+                        
+                        const itemDate = document.createElement('div');
+                        itemDate.textContent = item.date || '';
+                        itemDate.style.cssText = `
+                            font-size: ${compact ? '10px' : '12px'};
+                            color: #777;
+                            font-style: italic;
+                            white-space: nowrap;
+                        `;
+                        
+                        itemHeader.appendChild(leftColumn);
+                        itemHeader.appendChild(itemDate);
+                        
+                        genericItem.appendChild(itemHeader);
+                        
+                        if (item.description) {
+                            const itemDescription = document.createElement('div');
+                            itemDescription.textContent = item.description;
+                            itemDescription.style.cssText = `
+                                font-size: ${compact ? '11px' : '12px'};
+                                color: #333;
+                                margin-top: 5px;
+                                line-height: 1.5;
+                            `;
+                            genericItem.appendChild(itemDescription);
+                        }
+                        
+                        section.appendChild(genericItem);
+                    }
+                });
+                
+                return section;
+            };
+            
+            // Add each section
+            const sections = [
+                {
+                    title: 'Profile',
+                    type: 'profile',
+                    items: resumeData.profile.filter(p => p.selected)
+                },
+                {
+                    title: 'Skills',
+                    type: 'skills',
+                    items: resumeData.skills.filter(s => s.selected)
+                },
+                {
+                    title: 'Work Experience',
+                    type: 'work',
+                    items: resumeData.work.filter(w => w.selected)
+                },
+                {
+                    title: 'Projects',
+                    type: 'projects',
+                    items: resumeData.projects.filter(p => p.selected)
+                },
+                {
+                    title: 'Education',
+                    type: 'education',
+                    items: resumeData.education.filter(e => e.selected)
+                },
+                {
+                    title: 'Certificates',
+                    type: 'certificates',
+                    items: resumeData.certificates.filter(c => c.selected)
+                }
+            ];
+            
+            sections.forEach(section => {
+                const sectionElement = createSection(section.title, section.items, section.type);
+                if (sectionElement) {
+                    container.appendChild(sectionElement);
+                }
+            });
+            
+            return container;
+        }
+    </script>
+</body>
+</html>
