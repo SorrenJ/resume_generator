@@ -9,9 +9,11 @@ import { ResumePreview } from './components/ResumePreview';
 
 const SAMPLE_MARKDOWN = `# John Doe
 ## Senior Software Engineer
+### /
 john.doe@email.com | (123) 456-7890 | linkedin.com/in/johndoe | github.com/johndoe
 
 ## Summary
+### /
 Senior Software Engineer with 8+ years of experience in full-stack development...
 
 ## Experience
@@ -111,154 +113,305 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  const handleExportPDF = async () => {
-    const element = document.getElementById('resume-preview');
-    if (!element) {
-      console.error('Preview element not found');
-      return;
+
+const handleExportPDF = () => {
+  const element = document.getElementById('resume-preview');
+  if (!element) return;
+
+  const pdf = new jsPDF({
+    orientation: 'portrait',
+    unit: 'in',
+    format: 'letter'
+  });
+
+  const margin = 0.5;
+  const pageWidth = 8.5;
+  const pageHeight = 11;
+  let yPos = margin;
+  let currentX = margin; // Track X position for inline elements
+  let currentFontSize = 9.5;
+  const showFullURLs = false; // Set to false to hide URLs
+  const lineHeight = 0.2;
+
+  // Helper function to extract all text content from an element and its children
+  const getFullTextContent = (element: HTMLElement): string => {
+    let text = '';
+    
+    const walker = document.createTreeWalker(
+      element,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+    
+    let node: Node | null;
+    while ((node = walker.nextNode())) {
+      text += node.textContent || '';
     }
+    
+    return text;
+  };
 
-    try {
-      // Create a new jsPDF instance
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'in',
-        format: 'letter'
-      });
+    // Function to add text at current position
+  const addText = (text: string, indent = 0, isInline = false) => {
+    if (!text.trim() && text !== ' ') return;
 
-      // Set PDF properties
-      pdf.setProperties({
-        title: 'Resume',
-        subject: 'Professional Resume',
-        author: 'Resume Generator',
-        creator: 'Resume Generator App'
-      });
+    const availableWidth = pageWidth - (2 * margin) - indent - (currentX - margin);
+    const lines = pdf.splitTextToSize(text, availableWidth);
 
-      // Extract text content from the preview
-      const extractTextFromElement = (el: HTMLElement): string => {
-        let text = '';
+    // CHANGED: Use a local variable to track the final X position
+    let finalX = currentX; 
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      let xPos: number;
+
+      if (yPos > pageHeight - margin) {
+        pdf.addPage();
+        yPos = margin;
+        currentX = margin;
+      }
+
+      if (i === 0) {
+        // First line continues from currentX
+        xPos = currentX;
+      } else {
+        // Subsequent lines start at the indent
+        yPos += lineHeight;
+        currentX = margin + indent;
+        xPos = currentX;
         
-        // Handle different element types
-        if (el.tagName === 'H1') {
-          text += el.textContent + '\n\n';
-        } else if (el.tagName === 'H2') {
-          text += el.textContent + '\n';
-        } else if (el.tagName === 'H3') {
-          text += el.textContent + '\n';
-        } else if (el.tagName === 'P') {
-          text += el.textContent + '\n';
-        } else if (el.tagName === 'LI') {
-          text += '• ' + el.textContent + '\n';
-        } else if (el.tagName === 'UL' || el.tagName === 'DIV') {
-          // Process children
-          Array.from(el.children).forEach(child => {
-            text += extractTextFromElement(child as HTMLElement);
-          });
-        } else {
-          text += el.textContent + '\n';
-        }
-        
-        return text;
-      };
-
-      // Extract all text content
-      const textContent = extractTextFromElement(element);
-      
-      // Split text into lines
-      const lines = textContent.split('\n');
-      
-      // PDF settings
-      const margin = 0.5;
-      const pageWidth = 8.5;
-      const pageHeight = 11;
-      const lineHeight = 0.2;
-      let yPosition = margin;
-      
-      // Add text to PDF
-      pdf.setFont('helvetica');
-      pdf.setFontSize(11);
-      
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        
-        // Check if we need a new page
-        if (yPosition > pageHeight - margin) {
+        if (yPos > pageHeight - margin) {
           pdf.addPage();
-          yPosition = margin;
-        }
-        
-        // Check if line is a heading
-        if (line.trim() && i < lines.length - 1) {
-          const nextLine = lines[i + 1];
-          if (nextLine && nextLine.trim() && !nextLine.startsWith('•')) {
-            // Check if this is a heading based on text patterns
-            if (line.includes('|') || line.includes('@')) {
-              // Contact info or similar
-              pdf.setFontSize(10);
-            } else if (line.trim().length < 50 && !line.startsWith('•')) {
-              // Likely a section heading
-              if (yPosition > margin) yPosition += lineHeight;
-              pdf.setFontSize(14);
-              pdf.setFont('helvetica', 'bold');
-              pdf.text(line.trim(), margin, yPosition);
-              yPosition += lineHeight * 1.5;
-              pdf.setFontSize(11);
-              pdf.setFont('helvetica', 'normal');
-              continue;
-            }
-          }
-        }
-        
-        // Add regular line
-        if (line.trim()) {
-          // Handle bullet points
-          if (line.startsWith('•')) {
-            const bulletText = line.substring(1).trim();
-            pdf.text('•', margin, yPosition);
-            pdf.text(bulletText, margin + 0.1, yPosition);
-          } else {
-            pdf.text(line.trim(), margin, yPosition);
-          }
-          yPosition += lineHeight;
-        } else {
-          // Empty line - add some spacing
-          yPosition += lineHeight * 0.5;
+          yPos = margin;
+          currentX = margin + indent;
+          xPos = currentX;
         }
       }
 
-      // Save the PDF
-      pdf.save('resume.pdf');
+      pdf.text(line, xPos, yPos);
       
-    } catch (error) {
-      console.error('PDF export error:', error);
-      // Fallback to html2canvas method with better settings
-      try {
-        const canvas = await html2canvas(element, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff',
-          logging: false
-        });
+      // CHANGED: Update the local finalX variable in each iteration
+      const lineWidth = pdf.getTextWidth(line) / 72; // Convert points to inches
+      finalX = xPos + lineWidth;
+    }
+    
+    // CHANGED: Update the global currentX only once, with the final position
+    currentX = finalX;
+  };
+
+  // Function to add separator between inline elements
+  const addSeparator = (separator = ' ') => {
+    const separatorWidth = pdf.getTextWidth(separator) / 72;
+    
+    // Check if separator fits on current line
+    if (currentX + separatorWidth > pageWidth - margin) {
+      // Doesn't fit, move to next line
+      yPos += lineHeight;
+      currentX = margin;
+      
+      if (yPos > pageHeight - margin) {
+        pdf.addPage();
+        yPos = margin;
+        currentX = margin;
+      }
+    }
+    
+    pdf.text(separator, currentX, yPos);
+    currentX += separatorWidth;
+  };
+
+  // Function to process child nodes
+  const processChildren = (element: HTMLElement, indent = 0, isInlineContext = false, isFirstInParent = true) => {
+    const children = Array.from(element.childNodes);
+    
+    children.forEach((child, index) => {
+      const isFirstInElement = isFirstInParent && index === 0;
+      processNode(child, indent, isInlineContext, isFirstInElement);
+    });
+  };
+
+  
+  // Function to process nodes recursively
+  const processNode = (node: Node, indent = 0, isInlineContext = false, isFirstInElement = true) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      // Text node
+      const text = node.textContent || '';
+      
+      // Add separator before text if not first in inline context
+      if (!isFirstInElement && isInlineContext && text.trim()) {
+        addSeparator();
+      }
+      
+      addText(text, indent, isInlineContext);
+      
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as HTMLElement;
+      
+      // Handle different HTML elements
+      if (element.tagName === 'H1') {
+        // End any inline context
+        currentX = margin;
         
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'in',
-          format: 'letter'
-        });
+        // Add space before H1 if not at top
+        if (yPos > margin + 0.2) {
+          yPos += 0.3;
+        }
         
-        const imgWidth = 7.5;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'bold');
+        processChildren(element, 0, false);
+        yPos += 0.3;
+        pdf.setFontSize(currentFontSize);
+        pdf.setFont('helvetica', 'normal');
+        currentX = margin;
         
-        pdf.addImage(imgData, 'JPEG', 0.5, 0.5, imgWidth, imgHeight);
-        pdf.save('resume-fallback.pdf');
-      } catch (fallbackError) {
-        console.error('Fallback PDF export also failed:', fallbackError);
-        alert('Failed to export PDF. Please try again.');
+      } else if (element.tagName === 'H2') {
+        // End any inline context
+        currentX = margin;
+        
+        // Add space before H2
+        yPos += 0.1;
+        pdf.setFontSize(11.5);
+        pdf.setFont('helvetica', 'bold');
+        processChildren(element, 0, false);
+        yPos += 0.1;
+        pdf.setFontSize(currentFontSize);
+        pdf.setFont('helvetica', 'normal');
+        currentX = margin;
+        
+ } else if (element.tagName === 'H3') {
+  // End any inline context
+  currentX = margin;
+  
+  // Add more space before H3 (0.15 inches)
+  yPos += 0.1;
+  pdf.setFontSize(10);
+  pdf.setFont('helvetica', 'bold');
+  processChildren(element, 0, false);
+  // Reduced space after H3 (0.1 inches)
+  yPos += 0.1;
+  pdf.setFontSize(currentFontSize);
+  pdf.setFont('helvetica', 'normal');
+  currentX = margin;
+  
+} else if (element.tagName === 'A') {
+  const href = element.getAttribute('href') || '';
+  
+  if (href) {
+    const linkText = getFullTextContent(element);
+    const linkWidth = pdf.getTextWidth(linkText);
+    
+    // Save current position
+    const startX = currentX;
+    const startY = yPos;
+    
+    // Add text
+    pdf.setTextColor(0, 0, 255);
+    pdf.textWithLink(linkText, currentX, yPos, { url: href });
+    
+    // Update position
+       currentX += linkWidth + 1;
+      //  yPos += 0.2;
+    // Add URL text for reference
+    if (showFullURLs) {
+      pdf.setTextColor(128, 128, 128);
+      pdf.setFont(pdf.getFont().fontName, 'italic');
+      addText(` (${href})`, indent, false);
+    }
+    
+    pdf.setTextColor(0, 0, 0);
+  } else {
+    processChildren(element, indent, isInlineContext, isFirstInElement);
+  }
+        
+      } else if (element.tagName === 'LI') {
+        // List item - start new line
+        currentX = margin;
+        
+        if (yPos > pageHeight - margin) {
+          pdf.addPage();
+          yPos = margin;
+          currentX = margin;
+        }
+        
+        const bullet = '• ';
+        const bulletIndent = indent + 0.2;
+        
+        // Add bullet
+        addText(bullet, indent, false);
+        
+        // Process content
+        processChildren(element, bulletIndent, true);
+        
+        // End list item
+        yPos += 0.1;
+        currentX = margin;
+        
+      } else if (element.tagName === 'P' || element.tagName === 'DIV') {
+        // End any inline context
+        currentX = margin;
+        
+        // Add space before paragraph if needed
+        if (yPos > margin) {
+          yPos += 0.1;
+        }
+        
+        // Process paragraph content as inline
+        processChildren(element, indent, true);
+        
+        // End paragraph
+        yPos += 0.1;
+        currentX = margin;
+        
+      } else if (element.tagName === 'BR') {
+        // Line break
+        yPos += lineHeight;
+        currentX = margin;
+        
+      } else if (element.tagName === 'SPAN' || element.tagName === 'STRONG' || element.tagName === 'EM' || 
+                 element.tagName === 'B' || element.tagName === 'I') {
+        // Inline elements - process children inline
+        
+        // Handle specific formatting
+        const originalFont = pdf.getFont();
+        
+        if (element.tagName === 'STRONG' || element.tagName === 'B') {
+          pdf.setFont(originalFont.fontName, 'bold');
+        } else if (element.tagName === 'EM' || element.tagName === 'I') {
+          pdf.setFont(originalFont.fontName, 'italic');
+        }
+        
+        processChildren(element, indent, true, isFirstInElement);
+        
+        // Restore font if we changed it
+        if (element.tagName === 'STRONG' || element.tagName === 'B' || 
+            element.tagName === 'EM' || element.tagName === 'I') {
+          pdf.setFont(originalFont.fontName, 'normal');
+        }
+        
+      } else if (element.tagName === 'UL' || element.tagName === 'OL') {
+        // Lists
+        currentX = margin;
+        processChildren(element, indent + 0.2, false);
+        yPos += 0.1; // Space after list
+        currentX = margin;
+        
+      } else {
+        // Default for other block-level elements
+        currentX = margin;
+        processChildren(element, indent, false);
+        currentX = margin;
       }
     }
   };
 
+  // Start processing
+  pdf.setFont('helvetica');
+  pdf.setFontSize(currentFontSize);
+  processChildren(element, 0, false);
+  
+  pdf.save('resume.pdf');
+};
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
