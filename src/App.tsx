@@ -151,6 +151,28 @@ const handleDeleteItem = (sectionId: string, itemId: string) => {
   );
 };
 
+// App.tsx - Add this function
+const handleReorderItems = (sectionId: string, activeId: string, overId: string) => {
+  setSections(prev =>
+    prev.map(section => {
+      if (section.id !== sectionId) return section;
+
+      const oldIndex = section.items.findIndex(item => item.id === activeId);
+      const newIndex = section.items.findIndex(item => item.id === overId);
+
+      if (oldIndex === -1 || newIndex === -1) return section;
+
+      const newItems = [...section.items];
+      const [movedItem] = newItems.splice(oldIndex, 1);
+      newItems.splice(newIndex, 0, movedItem);
+
+      return {
+        ...section,
+        items: newItems,
+      };
+    })
+  );
+};
 
   const handleDownloadMarkdown = () => {
     const markdown = sectionsToMarkdown(sections);
@@ -531,8 +553,9 @@ const handleExportPDF = () => {
                   onToggleItemVisibility={handleToggleItemVisibility}
                   onUpdateItemContent={handleUpdateItemContent}
                   onAddItem={handleAddItem}
-                  onUpdateItemTitle={handleUpdateItemTitle} // Add this
-                  onDeleteItem={handleDeleteItem} // Add this
+                  onUpdateItemTitle={handleUpdateItemTitle}
+                  onDeleteItem={handleDeleteItem} 
+                  onReorderItems={handleReorderItems}
                 />
               ))}
             </div>

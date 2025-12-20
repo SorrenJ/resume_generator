@@ -1,18 +1,20 @@
-// SectionCard.tsx
-import { Eye, EyeOff, Edit2, Check, Plus } from 'lucide-react'; // Add Plus icon
+// SectionCard.tsx - With proper typing for empty state
+import { Eye, EyeOff, Edit2, Check, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { ResumeSection } from '../types';
-import { ItemCard } from './ItemCard';
+import { SortableItemCard } from './SortableItemCard';
+import { DndProvider } from './DndContextProvider';
 
 interface SectionCardProps {
- section: ResumeSection;
+  section: ResumeSection;
   onToggleVisibility: (id: string) => void;
   onUpdateTitle: (id: string, title: string) => void;
   onToggleItemVisibility: (sectionId: string, itemId: string) => void;
   onUpdateItemContent: (sectionId: string, itemId: string, content: string) => void;
-  onUpdateItemTitle: (sectionId: string, itemId: string, title: string) => void; // Add this
-  onDeleteItem: (sectionId: string, itemId: string) => void; // Add this
+  onUpdateItemTitle: (sectionId: string, itemId: string, title: string) => void;
+  onDeleteItem: (sectionId: string, itemId: string) => void;
   onAddItem: (sectionId: string) => void;
+  onReorderItems: (sectionId: string, activeId: string, overId: string) => void;
 }
 
 export function SectionCard({
@@ -21,9 +23,10 @@ export function SectionCard({
   onUpdateTitle,
   onToggleItemVisibility,
   onUpdateItemContent,
-  onUpdateItemTitle, 
-  onDeleteItem, 
-  onAddItem, 
+  onUpdateItemTitle,
+  onDeleteItem,
+  onAddItem,
+  onReorderItems,
 }: SectionCardProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(section.title);
@@ -33,12 +36,20 @@ export function SectionCard({
     setIsEditingTitle(false);
   };
 
+  const handleDragEnd = (activeId: string, overId: string) => {
+    onReorderItems(section.id, activeId, overId);
+  };
+
+  // Check if section has items
+  const hasItems = section.items.length > 0;
+
   return (
     <div
       className={`border-2 rounded-lg p-6 transition-all ${
         section.visible ? 'bg-white border-blue-200' : 'bg-gray-50 border-gray-200 opacity-60'
       }`}
     >
+      {/* Header remains the same */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 flex-1">
           {isEditingTitle ? (
@@ -79,7 +90,6 @@ export function SectionCard({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {/* Add Item Button */}
           <button
             onClick={() => onAddItem(section.id)}
             className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors flex items-center gap-1"
@@ -89,7 +99,6 @@ export function SectionCard({
             <span className="text-sm font-medium">Add Item</span>
           </button>
           
-          {/* Toggle Visibility Button */}
           <button
             onClick={() => onToggleVisibility(section.id)}
             className="p-2 hover:bg-gray-100 rounded transition-colors"
@@ -104,24 +113,31 @@ export function SectionCard({
         </div>
       </div>
 
-      <div className="space-y-3">
-        {section.items.map((item) => (
-          <ItemCard
-            key={item.id}
-            item={item}
-            onToggleVisibility={(itemId) => onToggleItemVisibility(section.id, itemId)}
-            onUpdateContent={(itemId, content) =>
-              onUpdateItemContent(section.id, itemId, content)
-            }
-              onUpdateTitle={(itemId, title) => 
-              onUpdateItemTitle(section.id, itemId, title)
-            }
-            onDelete={(itemId) => 
-              onDeleteItem(section.id, itemId)
-            }
-          />
-        ))}
-        {section.items.length === 0 && (
+      {/* Items section - Conditionally render DndProvider only when there are items */}
+      <div className="space-y-3 pl-8">
+        {hasItems ? (
+          <DndProvider
+            items={section.items}
+            onDragEnd={handleDragEnd}
+          >
+            {section.items.map((item) => (
+              <SortableItemCard
+                key={item.id}
+                item={item}
+                onToggleVisibility={(itemId) => onToggleItemVisibility(section.id, itemId)}
+                onUpdateContent={(itemId, content) =>
+                  onUpdateItemContent(section.id, itemId, content)
+                }
+                onUpdateTitle={(itemId, title) =>
+                  onUpdateItemTitle(section.id, itemId, title)
+                }
+                onDelete={(itemId) =>
+                  onDeleteItem(section.id, itemId)
+                }
+              />
+            ))}
+          </DndProvider>
+        ) : (
           <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
             <p className="text-gray-400 text-sm italic mb-2">No items in this section</p>
             <button
