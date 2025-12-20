@@ -1,114 +1,45 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, Download, FileDown, Eye } from 'lucide-react';
-import html2pdf from 'html2pdf.js';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { ResumeSection } from './types';
 import { parseMarkdown, sectionsToMarkdown } from './utils/markdownParser';
 import { SectionCard } from './components/SectionCard';
 import { ResumePreview } from './components/ResumePreview';
 
-const SAMPLE_MARKDOWN = `
+const SAMPLE_MARKDOWN = `# John Doe
+## Senior Software Engineer
+john.doe@email.com | (123) 456-7890 | linkedin.com/in/johndoe | github.com/johndoe
 
-## Sorren Jao | Full Stack Developer
+## Summary
+Senior Software Engineer with 8+ years of experience in full-stack development...
 
-### 
+## Experience
+### Senior Software Engineer | TechCorp Inc. | Jan 2020 - Present
+- Led a team of 5 developers in redesigning the core platform...
+- Implemented microservices architecture that improved system scalability by 40%...
+- Reduced API response time by 60% through query optimization and caching...
 
-Richmond, BC | [(604)-353-4265](tel: 6043534265) | [Email](mailto: soalexjao@gmail.com) | [Portfolio](https://sorrenj.github.io/) | [LinkedIn](https://www.linkedin.com/in/sorren-alex-jao/) | [Github](https://github.com/SorrenJ)
-
-## Profile
-
-### 
-
-A Backend Developer passionate about leveraging AI and LLMs to build intuitive mobile apps that simplify complex domains like FinTech. Takes pride in writing clean, efficient, and user-first code, with a proven ability to make a rapid impact in agile, product-driven teams.
-
-## Skills
-
-### Web & Backend
-
-PHP, Node.js, Express.js, RESTful APIs, EJS, JSON, Ruby on Rails, Ajax
-
-### Programming Languages:
-
-Python, JavaScript (ES6), Java, C#, Dart, Ruby, TypeScript
-
-### Databases:
-
-PostgreSQL, MySQL, SQLite, MSSQL, NoSQL
-
-### Tools & Platforms:
-
-Git, GitHub, Jira, AWS (EC2, RDS, S3), Docker, Azure, MongoDB, Supabase
-
-### Mobile Development:
-
-Android (Java, Android SDK), Flutter, Camera APIs, TensorFlow Lite
-
-### Other:
-
-Agile/Scrum, API Design, Unit & Integration Testing, LLM Integration (OpenAI, Ollama)
-
-## Work Experience
-
-### Software Developer (AI & Backend), Expense Trend | 02/2025 – 05/2025
-
-- Deployed and configured GPT-based LLM servers on AWS EC2, reducing deployment costs.
-- Developed RESTful API endpoints in Express.js and conducted unit/integration testing using Swagger.
-- Collaborated with Stripe microservices developers and frontend teams via JIRA in an Agile environment.
-- Refined AI-generated outputs for financial advice applications and maintained API documentation.
-
-### Web Developer, Cybersalt Consulting Ltd. | 05/2022 – 09/2022
-
-- Built and optimized business websites using Joomla! and WordPress, improving SEO and UX.
-- Led frontend development for landing pages with a focus on usability and accessibility.
-- Conducted usability testing and provided client support through custom CSS, JavaScript, and PHP.
-
-### Web Designer (Marketing), Simon Fraser University (SFU) | 01/2021 – 09/2021
-
-- Designed web banners, marketing emails, and content-managed SFU web pages.
-- Developed a PHP & jQuery browser tool to optimize graduate student profile performance.
-
-## Projects
-
-### Financial Assistant (Mobile App) | 02/2025 – 05/2025
-
-A mobile app using prompt engineering and semantic search to deliver personalized financial advice from transaction data.  
-Built backend APIs consumed by iOS/Android clients with Node.js, Express, MySQL, MSSQL, and Azure.
-
-### Wildlife and Pest Animal Detection | 03/2024
-
-End-to-end computer vision system for automated detection of animals in large image datasets.  
-Utilized YOLOv8, TensorFlow, Python, and data preprocessing pipelines for environmental monitoring.
-
-### Facemask Detection App | 04/2022
-
-Android app built with TensorFlow Lite and YOLOv2 for real-time mask detection.  
-Implemented asynchronous camera processing and MVVM architecture patterns.
+### Software Engineer | StartupCo | Jun 2017 - Dec 2019
+- Developed responsive web applications using React and TypeScript...
+- Collaborated with product team to implement user-friendly features...
 
 ## Education
+### Bachelor of Science in Computer Science
+University of Technology | 2013 - 2017
+GPA: 3.8/4.0
 
-### Diploma in Full-Stack Web Development, Lighthouse Labs | 03/2024 – 10/2024
-
-The award winner for the Lighthouse Labs prize funding.
-
-### Bachelor of Science, Interactive Arts & Technology Simon Fraser University | 09/2016 – 04/2024
-
-A multidisciplinary program combining Computer Science, Artificial Intelligence, and UX Design. Coursework and projects explored topics such as mobile development, Object-Oriented Programming (OOP), and Data Structures & Algorithms.
-
-## Certificates
-
-### Hugging Face - The LLM Course | 10/2025
-
-Has successfully completed [Fundamentals of LLMs](https://huggingface.co/spaces/huggingface-course/chapter_1_exam/discussions/123#68f5cfee0748d548e5e8e54d)
-
-### Amazon AWS Certified Cloud Practitioner
-
-In Progress
-
+## Skills
+**Programming:** JavaScript, TypeScript, Python, Java
+**Frameworks:** React, Node.js, Express, Django
+**Tools:** Git, Docker, AWS, Jenkins
 `;
 
 function App() {
   const [sections, setSections] = useState<ResumeSection[]>(() => parseMarkdown(SAMPLE_MARKDOWN));
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -180,19 +111,152 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const element = document.getElementById('resume-preview');
-    if (!element) return;
+    if (!element) {
+      console.error('Preview element not found');
+      return;
+    }
 
-    const opt = {
-      margin: 0.5,
-      filename: 'resume.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-    };
+    try {
+      // Create a new jsPDF instance
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'in',
+        format: 'letter'
+      });
 
-    html2pdf().set(opt).from(element).save();
+      // Set PDF properties
+      pdf.setProperties({
+        title: 'Resume',
+        subject: 'Professional Resume',
+        author: 'Resume Generator',
+        creator: 'Resume Generator App'
+      });
+
+      // Extract text content from the preview
+      const extractTextFromElement = (el: HTMLElement): string => {
+        let text = '';
+        
+        // Handle different element types
+        if (el.tagName === 'H1') {
+          text += el.textContent + '\n\n';
+        } else if (el.tagName === 'H2') {
+          text += el.textContent + '\n';
+        } else if (el.tagName === 'H3') {
+          text += el.textContent + '\n';
+        } else if (el.tagName === 'P') {
+          text += el.textContent + '\n';
+        } else if (el.tagName === 'LI') {
+          text += '• ' + el.textContent + '\n';
+        } else if (el.tagName === 'UL' || el.tagName === 'DIV') {
+          // Process children
+          Array.from(el.children).forEach(child => {
+            text += extractTextFromElement(child as HTMLElement);
+          });
+        } else {
+          text += el.textContent + '\n';
+        }
+        
+        return text;
+      };
+
+      // Extract all text content
+      const textContent = extractTextFromElement(element);
+      
+      // Split text into lines
+      const lines = textContent.split('\n');
+      
+      // PDF settings
+      const margin = 0.5;
+      const pageWidth = 8.5;
+      const pageHeight = 11;
+      const lineHeight = 0.2;
+      let yPosition = margin;
+      
+      // Add text to PDF
+      pdf.setFont('helvetica');
+      pdf.setFontSize(11);
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        // Check if we need a new page
+        if (yPosition > pageHeight - margin) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+        
+        // Check if line is a heading
+        if (line.trim() && i < lines.length - 1) {
+          const nextLine = lines[i + 1];
+          if (nextLine && nextLine.trim() && !nextLine.startsWith('•')) {
+            // Check if this is a heading based on text patterns
+            if (line.includes('|') || line.includes('@')) {
+              // Contact info or similar
+              pdf.setFontSize(10);
+            } else if (line.trim().length < 50 && !line.startsWith('•')) {
+              // Likely a section heading
+              if (yPosition > margin) yPosition += lineHeight;
+              pdf.setFontSize(14);
+              pdf.setFont('helvetica', 'bold');
+              pdf.text(line.trim(), margin, yPosition);
+              yPosition += lineHeight * 1.5;
+              pdf.setFontSize(11);
+              pdf.setFont('helvetica', 'normal');
+              continue;
+            }
+          }
+        }
+        
+        // Add regular line
+        if (line.trim()) {
+          // Handle bullet points
+          if (line.startsWith('•')) {
+            const bulletText = line.substring(1).trim();
+            pdf.text('•', margin, yPosition);
+            pdf.text(bulletText, margin + 0.1, yPosition);
+          } else {
+            pdf.text(line.trim(), margin, yPosition);
+          }
+          yPosition += lineHeight;
+        } else {
+          // Empty line - add some spacing
+          yPosition += lineHeight * 0.5;
+        }
+      }
+
+      // Save the PDF
+      pdf.save('resume.pdf');
+      
+    } catch (error) {
+      console.error('PDF export error:', error);
+      // Fallback to html2canvas method with better settings
+      try {
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          logging: false
+        });
+        
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'in',
+          format: 'letter'
+        });
+        
+        const imgWidth = 7.5;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'JPEG', 0.5, 0.5, imgWidth, imgHeight);
+        pdf.save('resume-fallback.pdf');
+      } catch (fallbackError) {
+        console.error('Fallback PDF export also failed:', fallbackError);
+        alert('Failed to export PDF. Please try again.');
+      }
+    }
   };
 
   return (
@@ -266,7 +330,9 @@ function App() {
           {showPreview && (
             <div className="lg:sticky lg:top-8 h-fit">
               <h2 className="text-2xl font-bold text-gray-800 mb-4">Preview</h2>
-              <ResumePreview sections={sections} />
+              <div ref={previewRef}>
+                <ResumePreview sections={sections} />
+              </div>
             </div>
           )}
         </div>
