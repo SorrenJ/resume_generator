@@ -85,6 +85,29 @@ function App() {
     );
   };
 
+// App.tsx - Add this function inside the App component
+const handleAddItem = (sectionId: string) => {
+  setSections(prev =>
+    prev.map(section =>
+      section.id === sectionId
+        ? {
+            ...section,
+            items: [
+              ...section.items,
+              {
+                id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                title: `New Achievement`, // Better default title
+                content: 'Describe your accomplishment...',
+                visible: true,
+              },
+            ],
+          }
+        : section
+    )
+  );
+};
+
+
   const handleUpdateItemContent = (sectionId: string, itemId: string, content: string) => {
     setSections((prev) =>
       prev.map((section) =>
@@ -99,6 +122,35 @@ function App() {
       )
     );
   };
+
+const handleUpdateItemTitle = (sectionId: string, itemId: string, title: string) => {
+  setSections((prev) =>
+    prev.map((section) =>
+      section.id === sectionId
+        ? {
+            ...section,
+            items: section.items.map((item) =>
+              item.id === itemId ? { ...item, title } : item
+            ),
+          }
+        : section
+    )
+  );
+};
+
+const handleDeleteItem = (sectionId: string, itemId: string) => {
+  setSections((prev) =>
+    prev.map((section) =>
+      section.id === sectionId
+        ? {
+            ...section,
+            items: section.items.filter((item) => item.id !== itemId),
+          }
+        : section
+    )
+  );
+};
+
 
   const handleDownloadMarkdown = () => {
     const markdown = sectionsToMarkdown(sections);
@@ -405,6 +457,9 @@ const handleExportPDF = () => {
     }
   };
 
+
+
+  
   // Start processing
   pdf.setFont('helvetica');
   pdf.setFontSize(currentFontSize);
@@ -475,6 +530,9 @@ const handleExportPDF = () => {
                   onUpdateTitle={handleUpdateSectionTitle}
                   onToggleItemVisibility={handleToggleItemVisibility}
                   onUpdateItemContent={handleUpdateItemContent}
+                  onAddItem={handleAddItem}
+                  onUpdateItemTitle={handleUpdateItemTitle} // Add this
+                  onDeleteItem={handleDeleteItem} // Add this
                 />
               ))}
             </div>

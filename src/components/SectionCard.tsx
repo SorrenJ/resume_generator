@@ -1,14 +1,18 @@
-import { Eye, EyeOff, Edit2, Check } from 'lucide-react';
+// SectionCard.tsx
+import { Eye, EyeOff, Edit2, Check, Plus } from 'lucide-react'; // Add Plus icon
 import { useState } from 'react';
 import { ResumeSection } from '../types';
 import { ItemCard } from './ItemCard';
 
 interface SectionCardProps {
-  section: ResumeSection;
+ section: ResumeSection;
   onToggleVisibility: (id: string) => void;
   onUpdateTitle: (id: string, title: string) => void;
   onToggleItemVisibility: (sectionId: string, itemId: string) => void;
   onUpdateItemContent: (sectionId: string, itemId: string, content: string) => void;
+  onUpdateItemTitle: (sectionId: string, itemId: string, title: string) => void; // Add this
+  onDeleteItem: (sectionId: string, itemId: string) => void; // Add this
+  onAddItem: (sectionId: string) => void;
 }
 
 export function SectionCard({
@@ -17,6 +21,9 @@ export function SectionCard({
   onUpdateTitle,
   onToggleItemVisibility,
   onUpdateItemContent,
+  onUpdateItemTitle, 
+  onDeleteItem, 
+  onAddItem, 
 }: SectionCardProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(section.title);
@@ -71,17 +78,30 @@ export function SectionCard({
             </>
           )}
         </div>
-        <button
-          onClick={() => onToggleVisibility(section.id)}
-          className="p-2 hover:bg-gray-100 rounded transition-colors"
-          title={section.visible ? 'Hide section' : 'Show section'}
-        >
-          {section.visible ? (
-            <Eye className="w-5 h-5 text-blue-600" />
-          ) : (
-            <EyeOff className="w-5 h-5 text-gray-400" />
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Add Item Button */}
+          <button
+            onClick={() => onAddItem(section.id)}
+            className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors flex items-center gap-1"
+            title="Add new item"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="text-sm font-medium">Add Item</span>
+          </button>
+          
+          {/* Toggle Visibility Button */}
+          <button
+            onClick={() => onToggleVisibility(section.id)}
+            className="p-2 hover:bg-gray-100 rounded transition-colors"
+            title={section.visible ? 'Hide section' : 'Show section'}
+          >
+            {section.visible ? (
+              <Eye className="w-5 h-5 text-blue-600" />
+            ) : (
+              <EyeOff className="w-5 h-5 text-gray-400" />
+            )}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -93,10 +113,25 @@ export function SectionCard({
             onUpdateContent={(itemId, content) =>
               onUpdateItemContent(section.id, itemId, content)
             }
+              onUpdateTitle={(itemId, title) => 
+              onUpdateItemTitle(section.id, itemId, title)
+            }
+            onDelete={(itemId) => 
+              onDeleteItem(section.id, itemId)
+            }
           />
         ))}
         {section.items.length === 0 && (
-          <p className="text-gray-400 text-sm italic">No items in this section</p>
+          <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+            <p className="text-gray-400 text-sm italic mb-2">No items in this section</p>
+            <button
+              onClick={() => onAddItem(section.id)}
+              className="flex items-center gap-1 mx-auto px-3 py-1 bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors"
+            >
+              <Plus className="w-3 h-3" />
+              <span className="text-sm">Add your first item</span>
+            </button>
+          </div>
         )}
       </div>
     </div>
