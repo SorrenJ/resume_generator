@@ -8,33 +8,41 @@ import { SectionCard } from './components/SectionCard';
 import { ResumePreview } from './components/ResumePreview';
 
 const SAMPLE_MARKDOWN = `# John Doe
-## Senior Software Engineer
+## Full Stack Engineer
 ### /
 john.doe@email.com | (123) 456-7890 | linkedin.com/in/johndoe | github.com/johndoe
 
 ## Summary
 ### /
-Senior Software Engineer with 8+ years of experience in full-stack development...
+Desc here
 
-## Experience
-### Senior Software Engineer | TechCorp Inc. | Jan 2020 - Present
-- Led a team of 5 developers in redesigning the core platform...
-- Implemented microservices architecture that improved system scalability by 40%...
-- Reduced API response time by 60% through query optimization and caching...
-
-### Software Engineer | StartupCo | Jun 2017 - Dec 2019
-- Developed responsive web applications using React and TypeScript...
-- Collaborated with product team to implement user-friendly features...
-
-## Education
-### Bachelor of Science in Computer Science
-University of Technology | 2013 - 2017
-GPA: 3.8/4.0
-
-## Skills
+## Technical Skills  
 **Programming:** JavaScript, TypeScript, Python, Java
 **Frameworks:** React, Node.js, Express, Django
 **Tools:** Git, Docker, AWS, Jenkins
+
+## Experience
+
+### Software Developer (AI & Backend) | Expense Trend | Feb 2025 – May 2025
+
+
+
+### Web Developer | Cybersalt Consulting Ltd. | May 2022 – Sep 2022
+
+## Technical Projects  
+### ResumeForge — ATS-Optimized Resume Builder | Dec 2025 
+### Financial Assistant (Mobile App) | Feb 2025 – May 2025
+### AI Digital Twin (Full-Stack Chatbot) | Jan 2025
+## Education
+
+### Diploma in Full-Stack Web Development | Lighthouse Labs | Mar 2024 – Oct 2024
+
+- Awarded the Lighthouse Labs prize funding for outstanding project work and technical excellence
+
+### Bachelor of Science, Interactive Arts & Technology | Simon Fraser University | Sep 2016 – Apr 2024
+
+- Coursework included Object-Oriented Programming, Data Structures & Algorithms, Mobile Development, Software Engineering, and Web Technologies
+
 `;
 
 function App() {
@@ -203,7 +211,7 @@ const handleExportPDF = () => {
   const pageHeight = 11;
   let yPos = margin;
   let currentX = margin; // Track X position for inline elements
-  let currentFontSize = 9.5;
+  let currentFontSize = 10;
   const showFullURLs = false; // Set to false to hide URLs
   const lineHeight = 0.2;
 
@@ -327,14 +335,14 @@ const handleExportPDF = () => {
         currentX = margin;
         
         // Add space before H1 if not at top
-        if (yPos > margin + 0.2) {
-          yPos += 0.3;
+        if (yPos > margin + 0.1) {
+          yPos += 0.075;
         }
         
-        pdf.setFontSize(11);
+        pdf.setFontSize(12);
         pdf.setFont('helvetica', 'bold');
         processChildren(element, 0, false);
-        yPos += 0.3;
+        yPos += 0.075;
         pdf.setFontSize(currentFontSize);
         pdf.setFont('helvetica', 'normal');
         currentX = margin;
@@ -344,11 +352,11 @@ const handleExportPDF = () => {
         currentX = margin;
         
         // Add space before H2
-        yPos += 0.1;
+        yPos += 0.075;
         pdf.setFontSize(11.5);
         pdf.setFont('helvetica', 'bold');
         processChildren(element, 0, false);
-        yPos += 0.1;
+        yPos += 0.075;
         pdf.setFontSize(currentFontSize);
         pdf.setFont('helvetica', 'normal');
         currentX = margin;
@@ -358,12 +366,12 @@ const handleExportPDF = () => {
   currentX = margin;
   
   // Add more space before H3 (0.15 inches)
-  yPos += 0.1;
-  pdf.setFontSize(10);
+  yPos += 0.075;
+  pdf.setFontSize(11);
   pdf.setFont('helvetica', 'bold');
   processChildren(element, 0, false);
   // Reduced space after H3 (0.1 inches)
-  yPos += 0.1;
+  yPos += 0.075;
   pdf.setFontSize(currentFontSize);
   pdf.setFont('helvetica', 'normal');
   currentX = margin;
@@ -409,7 +417,7 @@ const handleExportPDF = () => {
         }
         
         const bullet = '• ';
-        const bulletIndent = indent + 0.2;
+        const bulletIndent = indent + 0.1;
         
         // Add bullet
         addText(bullet, indent, false);
