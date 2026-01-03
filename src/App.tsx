@@ -1,18 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
-import { Upload, Download, FileDown, Eye } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Upload, Download, FileDown, Eye, Plus, Trash2 } from 'lucide-react';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import { ResumeSection } from './types';
+import { ResumeSection, ResumeItem } from './types'; // Add ResumeItem import
 import { parseMarkdown, sectionsToMarkdown } from './utils/markdownParser';
 import { SectionCard } from './components/SectionCard';
 import { ResumePreview } from './components/ResumePreview';
-import { PDFSettingsPanel } from './components/PDFSettingsPanel'; // Add this import
+import { PDFSettingsPanel } from './components/PDFSettingsPanel';
 
 const SAMPLE_MARKDOWN = `# John Doe
 ## Full Stack Engineer
 ### /
 Richmond, BC | soalexjao@gmail.com | https://sorrenj.github.io/ | https://linkedin.com/in/sorren-alex-jao | https://github.com/SorrenJ
-
 
 ## Summary
 ### /
@@ -27,14 +25,13 @@ Desc here
 
 ### Software Developer (AI & Backend) | Expense Trend | Feb 2025 – May 2025
 
-
-
 ### Web Developer | Cybersalt Consulting Ltd. | May 2022 – Sep 2022
 
 ## Technical Projects  
 ### ResumeForge — ATS-Optimized Resume Builder | Dec 2025 
 ### Financial Assistant (Mobile App) | Feb 2025 – May 2025
 ### AI Digital Twin (Full-Stack Chatbot) | Jan 2025
+
 ## Education
 
 ### Diploma in Full-Stack Web Development | Lighthouse Labs | Mar 2024 – Oct 2024
@@ -47,7 +44,6 @@ Desc here
 
 `;
 
-// Add this interface at the top
 interface PDFSettings {
   fontSize: number;
   lineHeight: number;
@@ -56,18 +52,19 @@ interface PDFSettings {
 }
 
 function App() {
+  const [additionalProjects, setAdditionalProjects] = useState<ResumeItem[]>([]);
   const [sections, setSections] = useState<ResumeSection[]>(() => parseMarkdown(SAMPLE_MARKDOWN));
   const [showPreview, setShowPreview] = useState(false);
-  const [pdfSettings, setPdfSettings] = useState<PDFSettings>({ // Add this state
+  const [pdfSettings, setPdfSettings] = useState<PDFSettings>({
     fontSize: 10,
     lineHeight: 0.2,
     margins: 0.5,
     showFullURLs: false
   });
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const projectUploadRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLDivElement>(null);
-
-  // Rest of your existing handlers remain the same...
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -77,7 +74,19 @@ function App() {
     reader.onload = (e) => {
       const content = e.target?.result as string;
       const parsed = parseMarkdown(content);
-      setSections(parsed);
+      
+      // Merge with existing additional projects
+      const mergedSections = parsed.map(section => {
+        if (section.title.toLowerCase().includes('project') && additionalProjects.length > 0) {
+          return {
+            ...section,
+            items: [...section.items, ...additionalProjects]
+          };
+        }
+        return section;
+      });
+      
+      setSections(mergedSections);
     };
     reader.readAsText(file);
   };
@@ -163,16 +172,22 @@ function App() {
   };
 
   const handleDeleteItem = (sectionId: string, itemId: string) => {
-    setSections((prev) =>
-      prev.map((section) =>
-        section.id === sectionId
-          ? {
-              ...section,
-              items: section.items.filter((item) => item.id !== itemId),
-          }
-        : section
-      )
-    );
+    const isAdditionalProject = additionalProjects.some(proj => proj.id === itemId);
+  
+    if (isAdditionalProject) {
+      handleRemoveAdditionalProject(itemId);
+    } else {
+      setSections((prev) =>
+        prev.map((section) =>
+          section.id === sectionId
+            ? {
+                ...section,
+                items: section.items.filter((item) => item.id !== itemId),
+              }
+            : section
+        )
+      );
+    }
   };
 
   const handleReorderItems = (sectionId: string, activeId: string, overId: string) => {
@@ -195,6 +210,153 @@ function App() {
         };
       })
     );
+  };
+
+  const updateProjectsInSections = (projects: ResumeItem[]) => {
+    setSections(prev => {
+      const updatedSections = [...prev];
+      const projectSectionIndex = updatedSections.findIndex(
+        section => section.title.toLowerCase().includes('project')
+      );
+
+      if (projectSectionIndex !== -1) {
+        // Filter out previously added additional projects
+        const existingItems = updatedSections[projectSectionIndex].items.filter(
+          item => !item.isAdditional
+        );
+        
+        // Add new additional projects
+        updatedSections[projectSectionIndex] = {
+          ...updatedSections[projectSectionIndex],
+          items: [...existingItems, ...projects.map(proj => ({
+            ...proj,
+            isAdditional: true
+          }))]
+        };
+      } else {
+        // Create a new projects section if it doesn't exist
+        updatedSections.push({
+          id: `section-${Date.now()}`,
+          title: 'Technical Projects',
+          items: projects.map(proj => ({
+            ...proj,
+            isAdditional: true
+          })),
+          visible: true
+        });
+      }
+
+      return updatedSections;
+    });
+  };
+
+  const handleUploadAdditionalProjects = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      
+      // Parse the markdown content
+      const lines = content.split('\n');
+      const newProjects: ResumeItem[] = [];
+      let currentProject: Partial<ResumeItem> = {};
+
+      lines.forEach((line) => {
+        // Check for project headings (### indicates a project in markdown)
+        if (line.trim().startsWith('### ')) {
+          // Save previous project if exists
+          if (currentProject.title && currentProject.content) {
+            newProjects.push({
+              id: `project-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              title: currentProject.title,
+              content: currentProject.content,
+              visible: true,
+              isAdditional: true
+            });
+          }
+          
+          // Start new project
+          const title = line.replace('### ', '').trim();
+          currentProject = {
+            title,
+            content: '',
+            visible: true
+          };
+        } 
+        // Add content to current project (non-empty lines after title)
+        else if (currentProject.title && line.trim()) {
+          if (currentProject.content) {
+            currentProject.content += '\n' + line;
+          } else {
+            currentProject.content = line;
+          }
+        }
+      });
+
+      // Add the last project
+      if (currentProject.title && currentProject.content) {
+        newProjects.push({
+          id: `project-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          title: currentProject.title,
+          content: currentProject.content,
+          visible: true,
+          isAdditional: true
+        });
+      }
+
+      // Update additional projects state
+      setAdditionalProjects(prev => [...prev, ...newProjects]);
+      
+      // Update the resume sections with new projects
+      updateProjectsInSections(newProjects);
+
+      // Reset file input
+      if (projectUploadRef.current) {
+        projectUploadRef.current.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Function to remove an additional project
+  const handleRemoveAdditionalProject = (projectId: string) => {
+    // Remove from additional projects state
+    setAdditionalProjects(prev => prev.filter(proj => proj.id !== projectId));
+    
+    // Update sections to remove the project
+    setSections(prev => {
+      const updatedSections = [...prev];
+      const projectSectionIndex = updatedSections.findIndex(
+        section => section.title.toLowerCase().includes('project')
+      );
+
+      if (projectSectionIndex !== -1) {
+        updatedSections[projectSectionIndex] = {
+          ...updatedSections[projectSectionIndex],
+          items: updatedSections[projectSectionIndex].items.filter(
+            item => item.id !== projectId
+          )
+        };
+      }
+
+      return updatedSections;
+    });
+  };
+
+  // Add a handler for manual project addition
+  const handleAddManualProject = () => {
+    const newProject: ResumeItem = {
+      id: `project-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      title: 'New Additional Project',
+      content: 'Describe your project here...',
+      visible: true,
+      isAdditional: true
+    };
+
+    setAdditionalProjects(prev => [...prev, newProject]);
+    updateProjectsInSections([newProject]);
   };
 
   const handleDownloadMarkdown = () => {
@@ -476,6 +638,65 @@ function App() {
             Edit your markdown resume, toggle sections and items, and export to PDF
           </p>
         </header>
+
+        {/* Additional Projects Section - FIXED POSITION */}
+        <div className="mb-6 bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-800">Additional Projects</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => projectUploadRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-md"
+              >
+                <Upload className="w-4 h-4" />
+                Upload Projects Markdown
+              </button>
+              <button
+                onClick={handleAddManualProject}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
+              >
+                <Plus className="w-4 h-4" />
+                Add Project
+              </button>
+            </div>
+            <input
+              ref={projectUploadRef}
+              type="file"
+              accept=".md,.markdown,.txt"
+              onChange={handleUploadAdditionalProjects}
+              className="hidden"
+            />
+          </div>
+          
+          <p className="text-gray-600 mb-4">
+            Upload a markdown file with projects (each project should start with ### Title)
+          </p>
+          
+          {additionalProjects.length > 0 && (
+            <div className="mt-4">
+              <h3 className="font-semibold text-gray-700 mb-2">Uploaded Projects ({additionalProjects.length})</h3>
+              <div className="space-y-2">
+                {additionalProjects.map(project => (
+                  <div key={project.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                    <div>
+                      <h4 className="font-medium text-gray-800">{project.title}</h4>
+                      <p className="text-gray-600 text-sm truncate">
+                        {project.content.substring(0, 100)}...
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveAdditionalProject(project.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                      title="Remove project"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="flex gap-4 mb-6 flex-wrap">
           <button

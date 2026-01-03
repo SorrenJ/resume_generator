@@ -3,6 +3,7 @@ export interface ResumeItem {
   title: string;
   content: string;
   visible: boolean;
+   isAdditional?: boolean; // Add this to track which items are from additional uploads
 }
 
 export interface ResumeSection {
